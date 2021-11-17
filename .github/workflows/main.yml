@@ -20,7 +20,7 @@ jobs:
 
       - name: Retrieve MediaWiki version
         run: |
-          echo ::set-env name=TAG_NAME::$(cat ./${{ matrix.mediawiki_version }}/Dockerfile | sed -n -e 's/^.*FROM mediawiki://p')
+          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/Dockerfile | sed -n -e 's/^.*FROM mediawiki://p')" >> $GITHUB_ENV
           echo ${{ env.TAG_NAME }}
 
       - name: Set up Docker Buildx
