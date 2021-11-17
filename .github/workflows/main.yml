@@ -22,10 +22,6 @@ jobs:
         run: |
           echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/Dockerfile | sed -n -e 's/^.*FROM mediawiki://p')" >> $GITHUB_ENV
 
-      - name: Print MediaWiki version
-        run: |
-          echo "${{ env.TAG_NAME }}"
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -51,7 +47,7 @@ jobs:
           file: ./${{ matrix.mediawiki_version }}/Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: gesinn/docker-mediawiki:${{ matrix.mediawiki_version }}
+          tags: gesinn/docker-mediawiki:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki:${{ env.TAG_NAME }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
 
