@@ -1,0 +1,61 @@
+###################################################
+# gesinn-it/docker-mediawiki:mw-1.37.0
+#
+# MEDIAWIKI_VERSION: MediaWiki Version
+# COMPOSER_VERSION: Composer Major Version (1 or 2)
+###################################################
+FROM mediawiki:1.37.0
+
+# Fix owner
+RUN chown -R www-data:www-data .
+
+# Existential tools
+RUN apt-get update && \
+    apt-get install -y \
+        sudo \
+        unzip \
+        less \
+        nano \
+        nodejs \
+        npm
+
+# Bashrc Alias
+RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
+    echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
+    echo "alias ...='cd ...'" >> /etc/bash.bashrc
+
+# Install Composer
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    php -r "if (hash_file('sha384', 'composer-setup.php') === '906a84df04cea2aa72f40b5f787e49f22d4c2f19492ac310e8cba5b96ac8b64115ac402c8cd292b8a03482574915d1a8') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && \
+# Set Composer major version
+    php composer-setup.php --2 && \
+    php -r "unlink('composer-setup.php');" && \
+    mv composer.phar /usr/local/bin/composer
+
+# Install XDebug
+RUN pecl install xdebug && \
+    bash -c "echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini" && \
+    bash -c "echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini" && \
+    php -v
+
+# Setup MediaWiki
+RUN sudo -u www-data composer update && \
+    sudo -u www-data php maintenance/install.php \
+        --pass=wiki4everyone \
+        --server="http://localhost:8080" \
+        --scriptpath="" \
+        --dbtype=sqlite \
+        --dbname=wiki \
+        --dbuser=wiki \
+        --dbpass=wiki \
+        --dbpath=/var/www/data \
+        wiki WikiSysop
+
+# Enable debug output, enable JS testing
+RUN bash -c "echo 'error_reporting(E_ALL| E_STRICT);' >> LocalSettings.php" && \
+    bash -c "echo 'ini_set(\"display_errors\", 1);' >> LocalSettings.php" && \
+    bash -c 'echo "\$wgShowExceptionDetails = true;" >> LocalSettings.php' && \
+    bash -c 'echo "\$wgDevelopmentWarnings = true;" >> LocalSettings.php' && \
+    bash -c 'echo "\$wgEnableJavaScriptTest = true;" >> LocalSettings.php' && \
+    bash -c 'echo "\$wgDebugToolbar = true;" >> LocalSettings.php' && \
+    tail -n6 LocalSettings.php
