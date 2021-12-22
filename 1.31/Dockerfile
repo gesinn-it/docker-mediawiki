@@ -28,7 +28,7 @@ RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
 RUN php -r "copy('https://getcomposer.org/installer', 'installer');" && \
     php -r "copy('https://composer.github.io/installer.sig', 'expected');" && \
     echo `cat expected` " installer" | sha384sum -c - && \
-    php installer --version=${{ env.COMPOSER_VERSION }} && \
+    php installer --version=1.10.24 && \
     rm -f installer expected && \
     mv composer.phar /usr/local/bin/composer
 
