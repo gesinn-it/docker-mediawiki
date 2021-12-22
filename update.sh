@@ -12,8 +12,8 @@ mediawikiReleases=( "${mediawikiReleases[@]%/}" )
 echo ${mediawikiReleases[*]}
 
 declare -A composerVersion=(
-	[1.31]='1'
-	[default]='2'
+	[1.31]='1.10.24'
+	[default]='2.1.14'
 )
 
 function mediawiki_version() {
