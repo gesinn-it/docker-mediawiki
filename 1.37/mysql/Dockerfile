@@ -23,7 +23,7 @@ RUN apt-get update && \
         default-mysql-client
 
 # Test MySQL Connection
-RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION" && \
+RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
 
 # MySQL grant privileges
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'mysql'"
