@@ -32,7 +32,7 @@ jobs:
           docker exec mysql cat /etc/mysql/my.cnf
           docker exec mysql ls -la /etc/mysql/conf.d
           docker exec mysql ls -la /etc/mysql/mysql.conf.d
-          grep -r "bind-address" /etc/mysql
+          docker exec mysql grep -r "bind-address" /etc/mysql
 
       - name: Checkout
         uses: actions/checkout@v2
