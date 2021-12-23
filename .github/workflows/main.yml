@@ -30,7 +30,7 @@ jobs:
           mysql --version
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
           docker exec mysql cat /etc/mysql/my.cnf
-          docker exec /etc/mysql/mysql.conf.d//my.cnf
+          docker exec /etc/mysql/mysql.conf.d/my.cnf
 
       - name: Checkout
         uses: actions/checkout@v2
