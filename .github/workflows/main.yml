@@ -24,6 +24,12 @@ jobs:
           MARIADB_ROOT_PASSWORD: database
 
     steps:
+      - name: Check MySQL
+        run: |
+          mysql --version
+          sudo apt-get install -y mysql-client
+          mysql --host 127.0.0.1 --port 3306 -uroot -pdatabase -e "SHOW DATABASES"
+
       - name: Checkout
         uses: actions/checkout@v2
 
