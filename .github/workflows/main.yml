@@ -16,7 +16,7 @@ jobs:
         database_type: [sqlite, mysql]
 
     services:
-      some-mysql:
+      mysql:
         image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: database
@@ -28,7 +28,7 @@ jobs:
       - name: Check MySQL
         run: |
           mysql --version
-          sudo apt-get install -y mysql-client
+#          sudo apt-get install -y mysql-client
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
 
       - name: Checkout
