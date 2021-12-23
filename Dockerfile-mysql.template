@@ -50,7 +50,7 @@ RUN sudo -u www-data composer update && \
         --pass=wiki4everyone \
         --server="http://localhost:8080" \
         --scriptpath="" \
-        --dbserver=mysql \
+        --dbserver=127.0.0.1 \
         --dbport=${MYSQL_PORT} \
         --installdbuser=root \
         --installdbpass=database \
