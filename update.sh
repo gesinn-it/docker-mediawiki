@@ -29,11 +29,14 @@ for mediawikiRelease in "${mediawikiReleases[@]}"; do
   mediawikiVersion="$(mediawiki_version $mediawikiRelease)"
   composerVersion=${composerVersion[$mediawikiRelease]-${composerVersion[default]}}
 
-  mkdir -p "$mediawikiReleaseDir"
+  for dbType in sqlite mysql; do
+    dir="$mediawikiReleaseDir/$dbType"
+    mkdir -p "$dir"
 
-  sed -r \
-    -e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
-    -e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$mediawikiRelease"'!g' \
-    -e 's!%%COMPOSER_VERSION%%!'"$composerVersion"'!g' \
-    "Dockerfile.template" >"$mediawikiReleaseDir/Dockerfile"
+    sed -r \
+      -e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
+      -e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$mediawikiRelease"'!g' \
+      -e 's!%%COMPOSER_VERSION%%!'"$composerVersion"'!g' \
+      "Dockerfile-${dbType}.template" >"$dir/Dockerfile"
+  done
 done
