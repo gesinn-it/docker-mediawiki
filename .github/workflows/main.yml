@@ -18,6 +18,8 @@ jobs:
     services:
       some-mysql:
         image: mariadb:latest
+        ports:
+          - 3306:3306
         env:
           MARIADB_ROOT_PASSWORD: database
 
