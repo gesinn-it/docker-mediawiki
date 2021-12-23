@@ -24,7 +24,6 @@ RUN apt-get update && \
 
 # Test MySQL Connection
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION" && \
-    cat /etc/mysql/mysql.conf.d/mysqld.cnf | grep bind-address
 
 # MySQL grant privileges
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'mysql'"
