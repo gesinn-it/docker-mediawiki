@@ -29,7 +29,7 @@ jobs:
         run: |
           mysql --version
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
-          docker exec mysql bash -c "/etc/mysql/my.cnf | grep bind-address"
+          docker exec mysql bash -c "cat /etc/mysql/my.cnf | grep bind-address"
 
       - name: Checkout
         uses: actions/checkout@v2
