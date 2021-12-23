@@ -67,7 +67,7 @@ jobs:
           build-args: |
             MYSQL_PORT=${{ job.services.mysql.ports['3306'] }}
           builder: ${{ steps.buildx.outputs.name }}
-          push: true
+#          push: true
           tags: gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ env.TAG_NAME }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}

@@ -19,7 +19,11 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
-        npm
+        npm \
+        mysql-client
+
+# Test MySQL Connection
+RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
 
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
