@@ -44,9 +44,9 @@ RUN sudo -u www-data composer update && \
         --pass=wiki4everyone \
         --server="http://localhost:8080" \
         --scriptpath="" \
-        --dbserver=localhost
-        --installdbuser=root
-        --installdbpass=database
+        --dbserver=localhost \
+        --installdbuser=root \
+        --installdbpass=database \
         --dbtype=mysql \
         --dbname=wiki \
         --dbuser=wiki \
