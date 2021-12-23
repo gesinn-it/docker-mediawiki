@@ -25,6 +25,11 @@ RUN apt-get update && \
 # Test MySQL Connection
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
 
+# Test PHP and install pdo_mysql
+RUN php -m && \
+    docker-php-ext-install pdo_mysql && \
+    php -m
+
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
     echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
