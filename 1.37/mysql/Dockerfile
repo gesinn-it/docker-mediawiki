@@ -26,7 +26,7 @@ RUN apt-get update && \
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
 
 # MySQL grant privileges
-RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'database';"
+RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO root@`%` WITH GRANT OPTION;"
 
 # Test PHP and install pdo_mysql
 RUN php -m && \
