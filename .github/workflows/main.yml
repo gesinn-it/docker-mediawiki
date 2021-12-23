@@ -15,24 +15,21 @@ jobs:
         mediawiki_version: [1.31, 1.35, 1.36, 1.37]
         database_type: [sqlite, mysql]
 
-#    services:
-#      some-mysql:
-#        image: mariadb:latest
-#        ports:
-#          - 3306:3306
-#        env:
-#          MARIADB_ROOT_PASSWORD: database
+    services:
+      some-mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: database
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
-      - name: Start Ubuntu's MySQL
-        run: |
-          sudo /etc/init.d/mysql start
-
       - name: Check MySQL
         run: |
           mysql --version
           sudo apt-get install -y mysql-client
-          mysql --host 127.0.0.1 --port 3306 -uroot -pdatabase -e "SHOW DATABASES"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
 
       - name: Checkout
         uses: actions/checkout@v2
