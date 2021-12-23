@@ -19,7 +19,8 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
-        npm
+        npm \
+        default-mysql-client
 
 # Test MySQL Connection
 RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
