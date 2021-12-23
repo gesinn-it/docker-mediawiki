@@ -6,6 +6,8 @@
 ###################################################
 FROM mediawiki:1.35.5
 
+ARG MYSQL_PORT
+
 # Fix owner
 RUN chown -R www-data:www-data .
 
@@ -45,6 +47,7 @@ RUN sudo -u www-data composer update && \
         --server="http://localhost:8080" \
         --scriptpath="" \
         --dbserver=localhost \
+        --dbport=${MYSQL_PORT} \
         --installdbuser=root \
         --installdbpass=database \
         --dbtype=mysql \
