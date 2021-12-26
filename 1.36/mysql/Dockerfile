@@ -58,16 +58,15 @@ RUN sudo -u www-data composer update && \
         --pass=wiki4everyone \
         --server="http://localhost:8080" \
         --scriptpath="" \
-        --dbserver=127.0.0.1 \
-        --dbport=${MYSQL_PORT} \
+        --dbserver=127.0.0.1:${MYSQL_PORT} \
         --installdbuser=root \
         --installdbpass=database \
         --dbtype=mysql \
         --dbname=wiki \
         --dbuser=wiki \
         --dbpass=wiki \
-        --dbpath=/var/www/data \
-        wiki WikiSysop
+        wiki WikiSysop && \
+     cat LocalSettings.php | grep "$wgDB"
 
 # Enable debug output, enable JS testing
 RUN bash -c "echo 'error_reporting(E_ALL| E_STRICT);' >> LocalSettings.php" && \
