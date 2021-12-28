@@ -12,8 +12,11 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: [1.31, 1.35, 1.36, 1.37]
+#        mediawiki_version: [1.31, 1.35, 1.36, 1.37]
+#        database_type: [sqlite, mysql]
+        mediawiki_version: [1.35]
         database_type: [sqlite, mysql]
+
 
     services:
       mysql:
@@ -74,3 +77,7 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Dump MySQL database
+        run: mysqldump -uroot --password database --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick -c | bzip2 -cz9 > mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
+        if: matrix.database_type == mysql
