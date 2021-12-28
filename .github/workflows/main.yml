@@ -83,7 +83,7 @@ jobs:
         if: matrix.database_type == 'mysql'
 
       - name: Create Tag and upload MySQL dump as artifact
-        uses: uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.TAG_NAME }}
           allowUpdates: true
