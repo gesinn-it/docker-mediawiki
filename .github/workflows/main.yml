@@ -82,7 +82,7 @@ jobs:
         run: |
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW DATABASES"
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW TABLES FROM wiki"
-          mysqldump -uroot -pdatabase --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick wiki -c | bzip2 -cz9 > mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
+          mysqldump -uroot -pdatabase --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick --column-statistics=0 wiki -c | bzip2 -cz9 > mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
         if: matrix.database_type == 'mysql'
 
       - name: Create Tag and upload MySQL dump as artifact
