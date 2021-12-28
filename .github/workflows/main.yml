@@ -2,7 +2,7 @@ name: CI to Docker Hub
 
 on:
   push:
-#    branches: [ main ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -56,6 +56,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      ## Create a timestamp to disable cache for install.php RUN to force populating the database
       - name: Get timestamp
         id: date
         run: echo "::set-output name=date::$(date +%s)"
@@ -72,7 +73,7 @@ jobs:
             MYSQL_PORT=${{ job.services.mysql.ports['3306'] }}
             CACHEBUST=${{ steps.date.outputs.date }}
           builder: ${{ steps.buildx.outputs.name }}
-#          push: true
+          push: true
           tags: gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ env.TAG_NAME }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
