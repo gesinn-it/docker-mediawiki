@@ -13,24 +13,40 @@ jobs:
     strategy:
       matrix:
         mediawiki_version: [1.31, 1.35, 1.36, 1.37]
-        dbtype: [sqlite, mysql]
+        database_type: [sqlite, mysql]
+
+    services:
+      mysql:
+        image: mariadb:latest
+        env:
+          MYSQL_ROOT_PASSWORD: database
+        ports:
+          - 3306
+        options: --name mysql --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
+      - name: Check MySQL
+        run: |
+          mysql --version
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
+
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Retrieve MediaWiki version
         run: |
-          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/Dockerfile | sed -n -e 's/^.*FROM mediawiki://p')" >> $GITHUB_ENV
+          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile | sed -n -e 's/^.*FROM mediawiki://p')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
+        with:
+          driver-opts: network=host
 
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
-          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}
+          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
@@ -40,17 +56,43 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      ## Create a timestamp to disable cache for install.php RUN to force populating the database
+      - name: Get timestamp
+        id: date
+        run: echo "::set-output name=date::$(date +%s)"
+
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./
-          file: ./${{ matrix.mediawiki_version }}/Dockerfile
+          file: ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile
+          network: host
+          allow: network.host
+          build-args: |
+            MYSQL_PORT=${{ job.services.mysql.ports['3306'] }}
+            CACHEBUST=${{ steps.date.outputs.date }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: gesinn/docker-mediawiki:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki:${{ env.TAG_NAME }}
-          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
-          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
+          tags: gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ env.TAG_NAME }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Dump MySQL database
+        run: |
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW DATABASES"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW TABLES FROM wiki"
+          mysqldump -uroot -pdatabase --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick --column-statistics=0 wiki -c | bzip2 -cz9 > mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
+        if: matrix.database_type == 'mysql'
+
+      - name: Create Tag and upload MySQL dump as artifact
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG_NAME }}
+          allowUpdates: true
+          artifacts: mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
+          token: ${{ secrets.GITHUB_TOKEN }}
+        if: matrix.database_type == 'mysql'
