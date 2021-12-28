@@ -83,7 +83,7 @@ RUN sudo -u www-data composer update && \
         wiki WikiSysop
 
 # Set wgDBserver=mysql
-RUN sed -i '/\$wgDBserver/c\\$wgDBserver = "mysql";' ${{ env.MW_INST_PATH }}/LocalSettings.php
+RUN sed -i '/$wgDBserver/c\$wgDBserver = "mysql";' LocalSettings.php
 
 # Enable debug output, enable JS testing
 RUN bash -c "echo 'error_reporting(E_ALL| E_STRICT);' >> LocalSettings.php" && \
