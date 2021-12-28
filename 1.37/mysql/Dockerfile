@@ -55,6 +55,8 @@ RUN pecl install xdebug && \
     php -v
 
 # Setup MediaWiki
+## prevent caching
+ARG CACHEBUST=1
 RUN sudo -u www-data composer update && \
     sudo -u www-data php maintenance/install.php \
         --pass=wiki4everyone \
