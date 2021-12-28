@@ -19,10 +19,9 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
-        npm
-
-# Install MySQL client for debugging
-# RUN apt-get install -y default-mysql-client
+        npm \
+        wget \
+        default-mysql-client
 
 # Test MySQL Connection
 # RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
@@ -30,10 +29,22 @@ RUN apt-get update && \
 # MySQL grant privileges
 # RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'database'"
 
-# Test PHP and install pdo_mysql
-RUN php -m && \
-    docker-php-ext-install pdo_mysql && \
-    php -m
+# Install pdo_mysql
+RUN docker-php-ext-install pdo_mysql
+
+# Create database restore script
+echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1.36.3/mediawiki-mysql-1.36.3.sql.bz2" >> restore-database.sh
+echo "bunzip2 mediawiki-mysql-1.36.3.sql.bz2" >> restore-database.sh
+echo "export MYSQL_PWD=database" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"create database wiki\"" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'%';\" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'%' IDENTIFIED BY 'wiki';\" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'localhost';\" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'localhost' IDENTIFIED BY 'wiki';\" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'%' WITH GRANT OPTION\" >> restore-database.sh
+echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'localhost' WITH GRANT OPTION\" >> restore-database.sh
+echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\" < mediawiki-mysql-1.36.3.sql >> restore-database.sh
+echo "sed -i '/$wgDBserver/c\$wgDBserver = \"mysql\";' ${{ env.MW_INST_PATH }}/LocalSettings.php >> restore-database.sh
 
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
