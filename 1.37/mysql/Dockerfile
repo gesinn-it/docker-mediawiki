@@ -45,6 +45,7 @@ echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter
 echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'localhost' WITH GRANT OPTION\" >> restore-database.sh
 echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\" < mediawiki-mysql-1.37.1.sql >> restore-database.sh
 echo "sed -i '/$wgDBserver/c\$wgDBserver = \"mysql\";' ${{ env.MW_INST_PATH }}/LocalSettings.php >> restore-database.sh
+cat restore-database.sh
 
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
