@@ -19,14 +19,16 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
-        npm \
-        default-mysql-client
+        npm
+
+# Install MySQL client for debugging
+# RUN apt-get install -y default-mysql-client
 
 # Test MySQL Connection
-RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
+# RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
 
 # MySQL grant privileges
-RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'database'"
+# RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'database'"
 
 # Test PHP and install pdo_mysql
 RUN php -m && \
@@ -65,8 +67,7 @@ RUN sudo -u www-data composer update && \
         --dbname=wiki \
         --dbuser=wiki \
         --dbpass=wiki \
-        wiki WikiSysop && \
-     cat LocalSettings.php | grep "$wgDB"
+        wiki WikiSysop
 
 # Enable debug output, enable JS testing
 RUN bash -c "echo 'error_reporting(E_ALL| E_STRICT);' >> LocalSettings.php" && \
