@@ -37,7 +37,7 @@ RUN bash -c 'echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/d
     bash -c 'echo "bunzip2 mediawiki-mysql-1.37.1.sql.bz2" >> restore-database.sh' && \
     bash -c 'echo "export MYSQL_PWD=database" >> restore-database.sh' && \
     bash -c 'echo "mysql --host mysql -uroot -e \"CREATE DATABASE wiki\"" >> restore-database.sh' && \
-    bash -c 'echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS \'wiki\'@\'%\';\"" >> restore-database.sh' && \
+    bash -c 'echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS `wiki`@`%`;\"" >> restore-database.sh' && \
 #    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'%' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
 #    echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'localhost';\"" >> restore-database.sh && \
 #    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'localhost' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
