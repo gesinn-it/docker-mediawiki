@@ -33,18 +33,18 @@ RUN apt-get update && \
 RUN docker-php-ext-install pdo_mysql
 
 # Create database restore script
-RUN bash -c 'echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1.37.1/mediawiki-mysql-1.37.1.sql.bz2" >> restore-database.sh' && \
-    bash -c 'echo "bunzip2 mediawiki-mysql-1.37.1.sql.bz2" >> restore-database.sh' && \
-    bash -c 'echo "export MYSQL_PWD=database" >> restore-database.sh' && \
-    bash -c 'echo "mysql --host mysql -uroot -e \"CREATE DATABASE wiki\"" >> restore-database.sh' && \
+RUN echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1.37.1/mediawiki-mysql-1.37.1.sql.bz2" >> restore-database.sh && \
+    echo "bunzip2 mediawiki-mysql-1.37.1.sql.bz2" >> restore-database.sh && \
+    echo "export MYSQL_PWD=database" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot -e \"CREATE DATABASE wiki\"" >> restore-database.sh && \
     echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'%';\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'%' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'localhost';\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'localhost' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'%' WITH GRANT OPTION\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'localhost' WITH GRANT OPTION\"" >> restore-database.sh && \
-#    echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\"" < mediawiki-mysql-1.37.1.sql >> restore-database.sh && \
-    bash -c 'echo "unset MYSQL_PWD" >> restore-database.sh' && \
+    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'%' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'localhost';\"" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'localhost' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'%' WITH GRANT OPTION\"" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'localhost' WITH GRANT OPTION\"" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\" < mediawiki-mysql-1.37.1.sql" >> restore-database.sh && \
+    echo "unset MYSQL_PWD" >> restore-database.sh && \
     cat restore-database.sh
 
 # Bashrc Alias
