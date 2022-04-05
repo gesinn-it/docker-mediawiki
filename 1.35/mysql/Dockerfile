@@ -1,10 +1,10 @@
 ###################################################
-# gesinn-it/docker-mediawiki:mw-1.35.5
+# gesinn-it/docker-mediawiki:mw-1.35.6
 #
 # MEDIAWIKI_VERSION: MediaWiki Version
 # COMPOSER_VERSION: Composer Major Version (1 or 2)
 ###################################################
-FROM mediawiki:1.35.5
+FROM mediawiki:1.35.6
 
 ARG MYSQL_PORT
 
@@ -33,8 +33,8 @@ RUN apt-get update && \
 RUN docker-php-ext-install pdo_mysql
 
 # Create database restore script
-RUN echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1.35.5/mediawiki-mysql-1.35.5.sql.bz2" >> restore-database.sh && \
-    echo "bunzip2 mediawiki-mysql-1.35.5.sql.bz2" >> restore-database.sh && \
+RUN echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1.35.6/mediawiki-mysql-1.35.6.sql.bz2" >> restore-database.sh && \
+    echo "bunzip2 mediawiki-mysql-1.35.6.sql.bz2" >> restore-database.sh && \
     echo "export MYSQL_PWD=database" >> restore-database.sh && \
     echo "mysql --host mysql -uroot -e \"CREATE DATABASE wiki\"" >> restore-database.sh && \
     echo "mysql --host mysql -uroot -e \"CREATE USER IF NOT EXISTS 'wiki'@'%';\"" >> restore-database.sh && \
@@ -43,7 +43,7 @@ RUN echo "wget https://github.com/gesinn-it/docker-mediawiki/releases/download/1
     echo "mysql --host mysql -uroot -e \"ALTER USER 'wiki'@'localhost' IDENTIFIED BY 'wiki';\"" >> restore-database.sh && \
     echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'%' WITH GRANT OPTION\"" >> restore-database.sh && \
     echo "mysql --host mysql -uroot -e \"grant select, insert, update, delete, alter, drop, create, create temporary tables, index on wiki.* to 'wiki'@'localhost' WITH GRANT OPTION\"" >> restore-database.sh && \
-    echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\" < mediawiki-mysql-1.35.5.sql" >> restore-database.sh && \
+    echo "mysql --host mysql -uroot --default-character-set=utf8 \"wiki\" < mediawiki-mysql-1.35.6.sql" >> restore-database.sh && \
     echo "unset MYSQL_PWD" >> restore-database.sh && \
     cat restore-database.sh
 
