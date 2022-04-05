@@ -9,7 +9,7 @@ FROM mediawiki:1.37.2
 # Fix owner
 RUN chown -R www-data:www-data .
 
-# Existential tools
+# Install required packages
 RUN apt-get update && \
     apt-get install -y \
         sudo \
@@ -18,6 +18,10 @@ RUN apt-get update && \
         nano \
         nodejs \
         npm
+RUN rm -rf /var/lib/apt/lists/*
+
+# Install required php extensions
+RUN docker-php-ext-install calendar
 
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \

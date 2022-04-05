@@ -11,7 +11,7 @@ ARG MYSQL_PORT
 # Fix owner
 RUN chown -R www-data:www-data .
 
-# Existential tools
+# Install required packages
 RUN apt-get update && \
     apt-get install -y \
         sudo \
@@ -22,6 +22,10 @@ RUN apt-get update && \
         npm \
         wget \
         default-mysql-client
+RUN rm -rf /var/lib/apt/lists/*
+
+# Install required php extensions
+RUN docker-php-ext-install calendar
 
 # Test MySQL Connection
 # RUN mysql --host 127.0.0.1 --port ${MYSQL_PORT} -uroot -pdatabase -e "SELECT @@VERSION"
