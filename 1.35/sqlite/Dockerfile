@@ -17,6 +17,7 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
+        grunt \
         npm
 RUN rm -rf /var/lib/apt/lists/*
 

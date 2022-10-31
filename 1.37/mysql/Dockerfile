@@ -19,6 +19,7 @@ RUN apt-get update && \
         less \
         nano \
         nodejs \
+        grunt \
         npm \
         wget \
         default-mysql-client
