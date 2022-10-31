@@ -1,10 +1,10 @@
 ###################################################
-# gesinn-it/docker-mediawiki:mw-1.35.7
+# gesinn-it/docker-mediawiki:mw-1.35.8
 #
 # MEDIAWIKI_VERSION: MediaWiki Version
 # COMPOSER_VERSION: Composer Major Version (1 or 2)
 ###################################################
-FROM mediawiki:1.35.7
+FROM mediawiki:1.35.8
 
 # Fix owner
 RUN chown -R www-data:www-data .
