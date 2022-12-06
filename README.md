@@ -7,3 +7,6 @@ Dockerized MediaWiki, build on top of official MediaWiki Docker image with prein
 - Wiki Admin: WikiSysop
 - Password: wiki4everyone
 
+## Important directories
+- `/etc/apache`
+- `/usr/local/etc/php/`
