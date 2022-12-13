@@ -66,7 +66,7 @@ RUN php -r "copy('https://getcomposer.org/installer', 'installer');" && \
     mv composer.phar /usr/local/bin/composer
 
 # Install XDebug
-RUN pecl install xdebug && \
+RUN pecl install xdebug-3.1.6 && \
     bash -c "echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini" && \
     bash -c "echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini" && \
     php -v
