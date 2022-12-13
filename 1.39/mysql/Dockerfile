@@ -4,7 +4,7 @@
 # MEDIAWIKI_VERSION: MediaWiki Version
 # COMPOSER_VERSION: Composer Major Version (1 or 2)
 ###################################################
-FROM mediawiki:1.39.0
+FROM gesinn/docker-mediawiki-base-apache:1.39.0
 
 ARG MYSQL_PORT
 
