@@ -35,7 +35,7 @@ jobs:
 
       - name: Retrieve MediaWiki version
         run: |
-          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile | sed -n -e 's/^.*FROM gesinn/docker-mediawiki-base-apache://p')" >> $GITHUB_ENV
+          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile | sed -n -e 's/^.*FROM gesinn\/docker-mediawiki-base-apache://p')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
