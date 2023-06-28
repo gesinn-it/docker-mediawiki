@@ -39,6 +39,7 @@ jobs:
         run: |
           mysql --version
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
+        if: matrix.database_type == 'mysql' && matrix.php_version == matrix.php_default
 
       - name: Checkout
         uses: actions/checkout@v3
