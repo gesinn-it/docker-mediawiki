@@ -15,7 +15,7 @@ github_php_version="$2"
 github_db_type="$3"
 
 mediawikiVersion="$(mediawiki_version $github_mw_version)"
-composerVersion=${composerVersion[$mediawikiRelease]-${composerVersion[default]}}
+composerVersion=${composerVersion[$github_mw_version]-${composerVersion[default]}}
 sed -r \
 	-e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
 	-e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$github_mw_version"'!g' \
