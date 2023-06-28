@@ -110,7 +110,8 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
-      # ab hier nur noch wenn php = default, damit der dump nur 1x pro MW version durchläuft
+      # only run for default php version, so we have a correct dump,
+      # and only a single dump per MW version
       - name: Dump MySQL database
         run: |
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW DATABASES"
