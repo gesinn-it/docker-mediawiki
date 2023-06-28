@@ -75,7 +75,7 @@ jobs:
       ## Create a timestamp to disable cache for install.php RUN to force populating the database
       - name: Get timestamp
         id: date
-        run: echo "::set-output name=date::$(date +%s)"
+        run: echo "timestamp=$(date +%s)" >> $GITHUB_ENV
 
       - name: set Imagename
         run: echo "ImageName=gesinn/docker-mediawiki-test-${{ matrix.database_type }}" >> $GITHUB_ENV
@@ -100,7 +100,7 @@ jobs:
           allow: network.host
           build-args: |
             MYSQL_PORT=${{ job.services.mysql.ports['3306'] }}
-            CACHEBUST=${{ steps.date.outputs.date }}
+            CACHEBUST=${{ env.timestamp }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
