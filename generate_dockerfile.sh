@@ -15,10 +15,13 @@ github_php_version="$2"
 github_db_type="$3"
 
 mediawikiVersion="$(mediawiki_version $github_mw_version)"
+baseImageTag="$mediawiki_version-php$github_php_version"
+
 composerVersion=${composerVersion[$github_mw_version]-${composerVersion[default]}}
 sed -r \
-	-e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
+    -e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
+	-e 's!%%BASE_IMAGE_TAG%%!'"$baseImageTag"'!g' \
 	-e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$github_mw_version"'!g' \
 	-e 's!%%COMPOSER_VERSION%%!'"$composerVersion"'!g' \
-	"Dockerfile-${dbType}.template" >"./Dockerfile"
+	"Dockerfile-${github_db_type}.template" >"./Dockerfile"
 
