@@ -15,7 +15,7 @@ github_php_version="$2"
 github_db_type="$3"
 
 mediawikiVersion="$(mediawiki_version $github_mw_version)"
-baseImageTag="$mediawiki_version-php$github_php_version"
+baseImageTag="$mediawikiVersion-php$github_php_version"
 
 composerVersion=${composerVersion[$github_mw_version]-${composerVersion[default]}}
 sed -r \
