@@ -1,10 +1,10 @@
 ###################################################
-# gesinn-it/docker-mediawiki:mw-%%MEDIAWIKI_VERSION%%
+# gesinn-it/docker-mediawiki:mw-%%BASE_IMAGE_TAG%%
 #
 # MEDIAWIKI_VERSION: MediaWiki Version
 # COMPOSER_VERSION: Composer Major Version (1 or 2)
 ###################################################
-FROM gesinn/docker-mediawiki-base-apache:%%MEDIAWIKI_VERSION%%
+FROM gesinn/docker-mediawiki-base-apache:%%BASE_IMAGE_TAG%%
 
 # Fix owner
 RUN chown -R www-data:www-data .

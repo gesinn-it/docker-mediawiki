@@ -12,30 +12,46 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: [1.35, 1.38, 1.39]
+        mediawiki_version: ['1.39', '1.38', '1.35']
+        php_version: ['8.1','8.0', '7.4']
         database_type: [sqlite, mysql]
+        include:
+          # set global default php
+          - php_default: '7.4'
+          # set 1.39 default php
+          - php_default: '8.1'
+            mediawiki_version: '1.39'
+        exclude:
+          - php_version: 7.4
+            mediawiki_version: '1.39'
 
     services:
       mysql:
         image: mariadb:latest
         env:
-          MYSQL_ROOT_PASSWORD: database
+          MARIADB_ROOT_PASSWORD: database
         ports:
           - 3306
-        options: --name mysql --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
+        options: --name mysql --health-cmd="mariadb-admin ping" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
       - name: Check MySQL
         run: |
           mysql --version
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SELECT @@VERSION"
+        if: matrix.database_type == 'mysql' && matrix.php_version == matrix.php_default
 
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Generate dockerfile
+        run: |
+          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.database_type}}
+
       - name: Retrieve MediaWiki version
         run: |
-          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile | sed -n -e 's/^.*FROM gesinn\/docker-mediawiki-base-apache://p')" >> $GITHUB_ENV
+          source ./helpers.sh
+          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
@@ -59,45 +75,60 @@ jobs:
       ## Create a timestamp to disable cache for install.php RUN to force populating the database
       - name: Get timestamp
         id: date
-        run: echo "::set-output name=date::$(date +%s)"
+        run: echo "timestamp=$(date +%s)" >> $GITHUB_ENV
+
+      - name: set Imagename
+        run: echo "ImageName=gesinn/docker-mediawiki-${{ matrix.database_type }}" >> $GITHUB_ENV
+
+      - name: generate tags for image
+        run: |
+          if [[ ${{matrix.php_version}} == ${{matrix.php_default}}  ]]; then
+            TAGS="${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}},${{ env.ImageName}}:${{ matrix.mediawiki_version}},${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.ImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
+          else
+            TAGS="${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.ImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
+          fi
+          echo $TAGS
+          echo "TAGS=$TAGS" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v4
         with:
           context: ./
-          file: ./${{ matrix.mediawiki_version }}/${{ matrix.database_type }}/Dockerfile
+          file: ./Dockerfile
           network: host
           allow: network.host
           build-args: |
             MYSQL_PORT=${{ job.services.mysql.ports['3306'] }}
-            CACHEBUST=${{ steps.date.outputs.date }}
+            CACHEBUST=${{ env.timestamp }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-${{ matrix.database_type }}:${{ env.TAG_NAME }}
+          tags: ${{ env.TAGS }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
+      # only run for default php version, so we have a correct dump,
+      # and only a single dump per MW version
       - name: Dump MySQL database
         run: |
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW DATABASES"
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -uroot -pdatabase -e "SHOW TABLES FROM wiki"
-          mysqldump -uroot -pdatabase --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick --column-statistics=0 wiki -c | bzip2 -cz9 > mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
-          cp mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2 mediawiki-mysql-${{ matrix.mediawiki_version }}.sql.bz2
-        if: matrix.database_type == 'mysql'
+          mysqldump -uroot -pdatabase --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} --default-character-set=utf8 --single-transaction --quick --column-statistics=0 wiki -c | bzip2 -cz9 > mediawiki-mysql-${{ env.MEDIAWIKI_FULL_VERSION }}.sql.bz2
+          cp mediawiki-mysql-${{ env.MEDIAWIKI_FULL_VERSION }}.sql.bz2 mediawiki-mysql-${{ matrix.mediawiki_version }}.sql.bz2
+        if: matrix.database_type == 'mysql' && matrix.php_version == matrix.php_default
 
       ## Minor Tag (e.g. MW 1.35.1)
       - name: Create Tag and upload MySQL dump as artifact
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ env.TAG_NAME }}
+          tag: ${{ env.MEDIAWIKI_FULL_VERSION }}
           allowUpdates: true
-          artifacts: mediawiki-mysql-${{ env.TAG_NAME }}.sql.bz2
+          artifacts: mediawiki-mysql-${{ env.MEDIAWIKI_FULL_VERSION }}.sql.bz2
           token: ${{ secrets.GITHUB_TOKEN }}
-        if: matrix.database_type == 'mysql'
+        if: matrix.database_type == 'mysql' && matrix.php_version == matrix.php_default
 
       ## Major Tag (e.g. MW 1.35)
       - name: Create Tag and upload MySQL dump as artifact
@@ -107,4 +138,4 @@ jobs:
           allowUpdates: true
           artifacts: mediawiki-mysql-${{ matrix.mediawiki_version }}.sql.bz2
           token: ${{ secrets.GITHUB_TOKEN }}
-        if: matrix.database_type == 'mysql'
+        if: matrix.database_type == 'mysql' && matrix.php_version == matrix.php_default
