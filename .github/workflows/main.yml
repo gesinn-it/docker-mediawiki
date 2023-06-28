@@ -51,7 +51,7 @@ jobs:
       - name: Retrieve MediaWiki version
         run: |
           source ./helpers.sh
-          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version $github_mw_version)" >> $GITHUB_ENV
+          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
