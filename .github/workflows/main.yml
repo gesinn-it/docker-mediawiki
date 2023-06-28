@@ -78,7 +78,7 @@ jobs:
         run: echo "timestamp=$(date +%s)" >> $GITHUB_ENV
 
       - name: set Imagename
-        run: echo "ImageName=gesinn/docker-mediawiki-test-${{ matrix.database_type }}" >> $GITHUB_ENV
+        run: echo "ImageName=gesinn/docker-mediawiki-${{ matrix.database_type }}" >> $GITHUB_ENV
 
       - name: generate tags for image
         run: |
