@@ -50,7 +50,8 @@ jobs:
 
       - name: Retrieve MediaWiki version
         run: |
-          echo "MEDIAWIKI_FULL_VERSION=$(cat ./Dockerfile | sed -n -e 's/^.*FROM gesinn\/docker-mediawiki-base-apache://p')" >> $GITHUB_ENV
+          source ./helpers.sh
+          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version $github_mw_version)" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
