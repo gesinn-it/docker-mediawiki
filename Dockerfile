@@ -4,7 +4,7 @@
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
 ###################################################
-ARG BASE_IMAGE_TAG
+ARG MEDIAWIKI_VERSION
 ARG PHP_VERSION
 
 FROM gesinn/docker-mediawiki-base-apache:${MEDIAWIKI_VERSION}-php${PHP_VERSION}
