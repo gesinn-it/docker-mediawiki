@@ -40,9 +40,7 @@ RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 RUN echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 
 # Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
-
-RUN ls -la /
+COPY --from=composer:2.1 /usr/bin/composer /usr/local/bin/composer
 
 # Install Composer packages
 RUN composer update
