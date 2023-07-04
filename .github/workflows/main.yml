@@ -14,6 +14,7 @@ jobs:
       matrix:
         mediawiki_version: ['1.40', '1.39', '1.35']
         php_version: ['8.1','8.0', '7.4']
+        target_repository: ['mediawiki', 'mediawiki-ci']
         include:
           # set global default php
           - php_default: '8.1'
@@ -56,18 +57,11 @@ jobs:
           source ./helpers.sh
           echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
 
-      - name: set Imagename
-        run: echo "ImageName=gesinn/mediawiki" >> $GITHUB_ENV
-
       - name: generate tags for image
         run: |
-          if [[ ${{matrix.php_version}} == ${{matrix.php_default}}  ]]; then
-            TAGS="${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}},${{ env.ImageName}}:${{ matrix.mediawiki_version}},${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.ImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
-          else
-            TAGS="${{ env.ImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.ImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
-          fi
-          echo $TAGS
-          echo "TAGS=$TAGS" >> $GITHUB_ENV
+          source ./helpers.sh
+          echo "TAGS=$(generate_tags gesinn/${{ matrix.target_repository }} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}})" >> $GITHUB_ENV
+
 
       # Image build
       - name: Build and push
@@ -84,6 +78,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
+          target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
 
