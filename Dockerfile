@@ -1,5 +1,5 @@
 ###################################################
-# gesinn-it/docker-mediawiki:mw-%%BASE_IMAGE_TAG%%
+# gesinn-it/mediawiki:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache
 #
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
@@ -7,12 +7,7 @@
 ARG MEDIAWIKI_VERSION
 ARG PHP_VERSION
 
-FROM gesinn/docker-mediawiki-base-apache:${MEDIAWIKI_VERSION}-php${PHP_VERSION}
-
-# Bashrc Alias
-RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
-    echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
-    echo "alias ...='cd ...'" >> /etc/bash.bashrc
+FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache AS mediawiki
 
 # Install required packages
 RUN apt-get update && \
@@ -25,12 +20,31 @@ RUN apt-get update && \
     grunt \
     npm \
     wget \
-    default-mysql-client \
-    libpq-dev && \
+    default-mysql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # Install required php extensions
-RUN docker-php-ext-install pdo_mysql pgsql
+RUN docker-php-ext-install pdo_mysql
+
+# Install Composer
+COPY --from=composer:2.1 /usr/bin/composer /usr/local/bin/composer
+
+RUN composer update
+
+###################################################
+# gesinn-it/mediawiki-ci:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache
+###################################################
+FROM mediawiki AS mediawiki-ci
+# Bashrc Alias
+RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
+    echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
+    echo "alias ...='cd ...'" >> /etc/bash.bashrc
+
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install XDebug
 # ToDo: remove/adapt version pinning for newer PHP versions
@@ -40,8 +54,7 @@ RUN pecl install xdebug-3.1.6
 RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 RUN echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 
-# Install Composer
-COPY --from=composer:2.1 /usr/bin/composer /usr/local/bin/composer
+# Install required php extensions
+RUN docker-php-ext-install pgsql
 
-# Install Composer packages
 RUN composer update
