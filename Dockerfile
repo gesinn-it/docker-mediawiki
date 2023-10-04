@@ -9,6 +9,11 @@ ARG PHP_VERSION
 
 FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache AS mediawiki
 
+# Bashrc Alias
+RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
+    echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
+    echo "alias ...='cd ...'" >> /etc/bash.bashrc
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y \
