@@ -53,7 +53,7 @@ RUN apt-get update && \
 
 # Install XDebug
 # ToDo: remove/adapt version pinning for newer PHP versions
-RUN pecl install xdebug-3.1.6
+RUN pecl install xdebug
 
 # Configure Xdebug
 RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
