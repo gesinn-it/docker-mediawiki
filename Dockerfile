@@ -40,10 +40,13 @@ RUN composer update
 # gesinn-it/mediawiki-ci:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache
 ###################################################
 FROM mediawiki AS mediawiki-ci
-# Bashrc Alias
-RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
-    echo "alias ..='cd ..'" >> /etc/bash.bashrc && \
-    echo "alias ...='cd ...'" >> /etc/bash.bashrc
+
+### add build tools and patches folder
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/1.7.4 \
+	| tar xzC / --strip-components 1
+
+RUN chmod +x /build-tools/* /tools/*
+ENV PATH="/tools:/build-tools:${PATH}"
 
 # Install required packages
 RUN apt-get update && \
