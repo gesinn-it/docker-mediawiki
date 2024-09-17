@@ -42,7 +42,7 @@ RUN composer update
 FROM mediawiki AS mediawiki-ci
 
 ### add build tools and patches folder
-RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/1.7.4 \
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.0.1 \
 	| tar xzC / --strip-components 1
 
 RUN chmod +x /build-tools/* /tools/*
@@ -62,7 +62,7 @@ RUN pecl install xdebug-3.3.2
 RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 RUN echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 
-# Install required php extensions
+# Install required php extensions (required for CI)
 RUN docker-php-ext-install pgsql
 
 RUN composer update
