@@ -42,7 +42,7 @@ RUN composer update
 FROM mediawiki AS mediawiki-ci
 
 ### add build tools and patches folder
-RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.1.0 \
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.2.0 \
 	| tar xzC / --strip-components 1
 
 RUN chmod +x /build-tools/* /tools/*
