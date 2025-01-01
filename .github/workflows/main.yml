@@ -24,6 +24,14 @@ jobs:
         exclude:
           - php_version: '8.2'
             mediawiki_version: '1.39'
+          - php_version: '8.0'
+            mediawiki_version: '1.40'
+          - php_version: '8.0'
+            mediawiki_version: '1.41'
+          - php_version: '8.0'
+            mediawiki_version: '1.42'
+          - php_version: '8.0'
+            mediawiki_version: '1.43'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
