@@ -32,7 +32,7 @@ RUN apt-get update && \
 RUN docker-php-ext-install pdo_mysql
 
 # Install Composer
-COPY --from=composer:2.1 /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer:2.2 /usr/bin/composer /usr/local/bin/composer
 
 RUN composer update
 
