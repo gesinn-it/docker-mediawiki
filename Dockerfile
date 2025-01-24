@@ -35,7 +35,8 @@ RUN docker-php-ext-install pdo_mysql
 COPY --from=composer:2.2 /usr/bin/composer /usr/local/bin/composer
 
 RUN echo "{}" > composer.local.json && \
-    COMPOSER=composer.local.json composer config --no-plugins allow-plugins.wikimedia/composer-merge-plugin true
+    COMPOSER=composer.local.json composer config --no-plugins allow-plugins.wikimedia/composer-merge-plugin true && \
+	COMPOSER=composer.local.json composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
 
 RUN composer update
 
