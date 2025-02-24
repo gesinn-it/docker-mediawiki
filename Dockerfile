@@ -36,7 +36,7 @@ COPY --from=composer:2.2 /usr/bin/composer /usr/local/bin/composer
 
 RUN echo "{}" > composer.local.json && \
     COMPOSER=composer.local.json composer config --no-plugins allow-plugins.wikimedia/composer-merge-plugin true && \
-	COMPOSER=composer.local.json composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+	COMPOSER=composer.local.json composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true && \
     COMPOSER=composer.local.json composer config --no-plugins allow-plugins.composer/installers true
 
 RUN composer update
