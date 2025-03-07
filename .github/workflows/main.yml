@@ -36,6 +36,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
         # Docker setup
       - name: Set up Docker Buildx
         id: buildx
@@ -86,6 +89,7 @@ jobs:
           target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
+          platforms: linux/amd64,linux/arm64
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
