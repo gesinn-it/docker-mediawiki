@@ -14,8 +14,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        # mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
-        mediawiki_version: ['1.45']
+        mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
         target_repository: ['mediawiki', 'mediawiki-ci']
         php_version: ['8.4', '8.3', '8.2', '8.1']
 
@@ -119,9 +118,7 @@ jobs:
           target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }},mode=max
-          # platforms: linux/amd64,linux/arm64
-          # temp. build only amd64:
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
