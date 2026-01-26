@@ -33,7 +33,9 @@ RUN apt-get update && \
 RUN docker-php-ext-install pdo_mysql
 
 # Install Composer
-COPY --from=composer:2.2 /usr/bin/composer /usr/local/bin/composer
+ARG COMPOSER_VERSION
+COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/local/bin/composer
+
 
 RUN echo "{}" > composer.local.json && \
     COMPOSER=composer.local.json composer config --no-plugins allow-plugins.wikimedia/composer-merge-plugin true && \

@@ -82,6 +82,13 @@ jobs:
             *)   echo "XDEBUG_VERSION=3.3.2" >> $GITHUB_ENV ;;
           esac
 
+      - name: Set Composer version
+        run: |
+          case "${{ matrix.php_version }}" in
+            8.4|8.3|8.2) echo "COMPOSER_VERSION=2.9.2" >> $GITHUB_ENV ;;
+            *)           echo "COMPOSER_VERSION=2.2"   >> $GITHUB_ENV ;;
+          esac
+
       - name: generate tags for image
         run: |
           source ./helpers.sh
@@ -105,6 +112,7 @@ jobs:
             MEDIAWIKI_VERSION=${{ env.MEDIAWIKI_FULL_VERSION }}
             PHP_VERSION=${{ matrix.php_version }}
             XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
+            COMPOSER_VERSION=${{ env.COMPOSER_VERSION }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
