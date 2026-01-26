@@ -5,8 +5,11 @@
 # PHP_VERSION: PHP Version
 # XDEBUG_VERSION: Xdebug Version
 ###################################################
-ARG MEDIAWIKI_VERSION
-ARG PHP_VERSION
+ARG MEDIAWIKI_VERSION=1.45.1
+ARG PHP_VERSION=8.3
+ARG COMPOSER_VERSION=2.2
+
+FROM composer:${COMPOSER_VERSION} AS composer
 
 FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache AS mediawiki
 
@@ -33,9 +36,7 @@ RUN apt-get update && \
 RUN docker-php-ext-install pdo_mysql
 
 # Install Composer
-ARG COMPOSER_VERSION
-COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/local/bin/composer
-
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
 RUN echo "{}" > composer.local.json && \
     COMPOSER=composer.local.json composer config --no-plugins allow-plugins.wikimedia/composer-merge-plugin true && \
