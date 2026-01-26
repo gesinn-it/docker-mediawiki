@@ -11,25 +11,23 @@ jobs:
     runs-on: ubuntu-24.04
 
     strategy:
+      fail-fast: false
       matrix:
         mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
-        php_version: ['8.4', '8.3', '8.2', '8.1']
         target_repository: ['mediawiki', 'mediawiki-ci']
-        include:
-          # set global default php
-          - php_default: '8.1'
-          # set 1.35 default php
-          # - php_default: '7.4'
-          #  mediawiki_version: '1.35'
+        php_version: ['8.4', '8.3', '8.2', '8.1']
+
         exclude:
-          - php_version: '8.2'
-            mediawiki_version: '1.39'
-          - php_version: '8.3'
-            mediawiki_version: '1.39'
-          - php_version: '8.4'
-            mediawiki_version: '1.39'
-          - php_version: '8.1'
-            mediawiki_version: '1.45'
+          - mediawiki_version: "1.39"
+            php_version: "8.2"
+          - mediawiki_version: "1.39"
+            php_version: "8.3"
+          - mediawiki_version: "1.39"
+            php_version: "8.4"
+
+          - mediawiki_version: "1.45"
+            php_version: "8.1"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +45,7 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
-          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
+          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
@@ -63,11 +61,32 @@ jobs:
           source ./helpers.sh
           echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
 
+      - name: Set default PHP for this MediaWiki version
+        run: |
+          case "${{ matrix.mediawiki_version }}" in
+            1.45) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
+            1.44) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
+            1.43) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
+            1.39) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
+            *)    echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
+          esac
+
+      - name: Set Xdebug version
+        run: |
+          case "${{ matrix.php_version }}" in
+            8.4) echo "XDEBUG_VERSION=3.4.7" >> $GITHUB_ENV ;;
+            *)   echo "XDEBUG_VERSION=3.3.2" >> $GITHUB_ENV ;;
+          esac
+
       - name: generate tags for image
         run: |
           source ./helpers.sh
-          echo "TAGS=$(generate_tags gesinn/${{ matrix.target_repository }} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}})" >> $GITHUB_ENV
-
+          echo "TAGS=$(generate_tags \
+            gesinn/${{ matrix.target_repository }} \
+            ${{ env.MEDIAWIKI_FULL_VERSION }} \
+            ${{ matrix.mediawiki_version }} \
+            ${{ matrix.php_version }} \
+            ${{ env.PHP_DEFAULT }})" >> $GITHUB_ENV
 
       # Image build
       - name: Build and push
@@ -81,12 +100,13 @@ jobs:
           build-args: |
             MEDIAWIKI_VERSION=${{ env.MEDIAWIKI_FULL_VERSION }}
             PHP_VERSION=${{ matrix.php_version }}
+            XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
           target: ${{ matrix.target_repository }}
-          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
-          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.database_type }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}
           platforms: linux/amd64,linux/arm64
 
       - name: Image digest

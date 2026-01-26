@@ -3,6 +3,7 @@
 #
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
+# XDEBUG_VERSION: Xdebug Version
 ###################################################
 ARG MEDIAWIKI_VERSION
 ARG PHP_VERSION
@@ -46,6 +47,8 @@ RUN composer update
 ###################################################
 FROM mediawiki AS mediawiki-ci
 
+ARG XDEBUG_VERSION
+
 ### add build tools and patches folder
 RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.2.1 \
 	| tar xzC / --strip-components 1
@@ -60,8 +63,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install XDebug
-# ToDo: remove/adapt version pinning for newer PHP versions
-RUN pecl install xdebug-3.3.2
+RUN pecl install xdebug-${XDEBUG_VERSION} \
+ && rm -rf /tmp/pear
 
 # Configure Xdebug
 RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
