@@ -7,7 +7,7 @@
 ###################################################
 ARG MEDIAWIKI_VERSION=1.45.1
 ARG PHP_VERSION=8.3
-ARG COMPOSER_VERSION=2.2
+ARG COMPOSER_VERSION=2.9.2
 
 FROM composer:${COMPOSER_VERSION} AS composer
 
@@ -54,8 +54,8 @@ RUN echo "{}" > composer.local.json && \
 # (e.g. PHPUnit) even when running with --no-dev.
 # This image intentionally excludes all dev dependencies, so disabling
 # the audit here is safe. Remove once MediaWiki updates its dev constraints.
-RUN COMPOSER=composer.local.json composer config audit.block-insecure false && \
-    COMPOSER=composer.local.json composer update \
+RUN composer config --global audit.block-insecure false && \
+    composer update \
     --no-dev \
     --prefer-dist \
     --no-interaction \
@@ -67,7 +67,7 @@ RUN COMPOSER=composer.local.json composer config audit.block-insecure false && \
 ###################################################
 FROM mediawiki AS mediawiki-ci
 
-ARG XDEBUG_VERSION
+ARG XDEBUG_VERSION=3.3.2
 
 ### add build tools and patches folder
 RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.2.1 \
@@ -101,8 +101,8 @@ RUN docker-php-ext-install pgsql
 # TEMPORARY: Composer blocks dependency resolution due to dev-only
 # security advisories (e.g. PHPUnit). This does not affect runtime
 # dependencies. Remove once MediaWiki updates its dev constraints.
-RUN COMPOSER=composer.local.json composer config audit.block-insecure false && \
-    COMPOSER=composer.local.json composer update \
+RUN composer config --global audit.block-insecure false && \
+    composer update \
     --prefer-dist \
     --no-interaction \
     --no-progress
