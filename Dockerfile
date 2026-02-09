@@ -54,7 +54,8 @@ RUN echo "{}" > composer.local.json && \
 # (e.g. PHPUnit) even when running with --no-dev.
 # This image intentionally excludes all dev dependencies, so disabling
 # the audit here is safe. Remove once MediaWiki updates its dev constraints.
-RUN COMPOSER_NO_AUDIT=1 composer update \
+RUN composer config audit.block-insecure false && \
+	composer update \
     --no-dev \
     --prefer-dist \
     --no-interaction \
@@ -97,11 +98,11 @@ RUN docker-php-ext-install pgsql
 #     --no-interaction \
 #     --no-progress
 
-# TEMPORARY: Composer >=2.4 blocks builds on dev-only security advisories
-# (e.g. PHPUnit) even when running with --no-dev.
-# This image intentionally excludes all dev dependencies, so disabling
-# the audit here is safe. Remove once MediaWiki updates its dev constraints.
-RUN COMPOSER_NO_AUDIT=1 composer update \
+# TEMPORARY: Composer blocks dependency resolution due to dev-only
+# security advisories (e.g. PHPUnit). This does not affect runtime
+# dependencies. Remove once MediaWiki updates its dev constraints.
+RUN composer config audit.block-insecure false && \
+	composer update \
     --prefer-dist \
     --no-interaction \
     --no-progress
