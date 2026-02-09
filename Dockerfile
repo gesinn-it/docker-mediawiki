@@ -43,7 +43,18 @@ RUN echo "{}" > composer.local.json && \
 	COMPOSER=composer.local.json composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true && \
     COMPOSER=composer.local.json composer config --no-plugins allow-plugins.composer/installers true
 
-RUN composer update \
+# RUN composer update \
+#     --no-dev \
+#     --prefer-dist \
+#     --no-interaction \
+#     --no-progress \
+#     --no-scripts
+
+# TEMPORARY: Composer >=2.4 blocks builds on dev-only security advisories
+# (e.g. PHPUnit) even when running with --no-dev.
+# This image intentionally excludes all dev dependencies, so disabling
+# the audit here is safe. Remove once MediaWiki updates its dev constraints.
+RUN COMPOSER_NO_AUDIT=1 composer update \
     --no-dev \
     --prefer-dist \
     --no-interaction \
@@ -81,7 +92,16 @@ RUN echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 # Install required php extensions (required for CI)
 RUN docker-php-ext-install pgsql
 
-RUN composer update \
+# RUN composer update \
+#     --prefer-dist \
+#     --no-interaction \
+#     --no-progress
+
+# TEMPORARY: Composer >=2.4 blocks builds on dev-only security advisories
+# (e.g. PHPUnit) even when running with --no-dev.
+# This image intentionally excludes all dev dependencies, so disabling
+# the audit here is safe. Remove once MediaWiki updates its dev constraints.
+RUN COMPOSER_NO_AUDIT=1 composer update \
     --prefer-dist \
     --no-interaction \
     --no-progress
