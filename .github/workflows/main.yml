@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
+        mediawiki_version: ['1.46', '1.45', '1.44', '1.43', '1.39']
         target_repository: ['mediawiki', 'mediawiki-ci']
         php_version: ['8.4', '8.3', '8.2', '8.1']
 
@@ -27,6 +27,8 @@ jobs:
             php_version: "8.4"
 
           - mediawiki_version: "1.45"
+            php_version: "8.1"
+          - mediawiki_version: "1.46"
             php_version: "8.1"
 
     steps:
