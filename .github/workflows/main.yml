@@ -69,6 +69,7 @@ jobs:
       - name: Set default PHP for this MediaWiki version
         run: |
           case "${{ matrix.mediawiki_version }}" in
+            1.46) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
             1.45) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
             1.44) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
             1.43) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
