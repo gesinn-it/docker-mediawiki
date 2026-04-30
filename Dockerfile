@@ -7,7 +7,7 @@
 ###################################################
 ARG MEDIAWIKI_VERSION=1.45.1
 ARG PHP_VERSION=8.3
-ARG COMPOSER_VERSION=2.9.2
+ARG COMPOSER_VERSION=2.9.7
 
 FROM composer:${COMPOSER_VERSION} AS composer
 

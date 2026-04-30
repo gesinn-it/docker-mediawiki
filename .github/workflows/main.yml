@@ -14,20 +14,9 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
+        mediawiki_version: ['1.45', '1.44', '1.43']
         target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ['8.4', '8.3', '8.2', '8.1']
-
-        exclude:
-          - mediawiki_version: "1.39"
-            php_version: "8.2"
-          - mediawiki_version: "1.39"
-            php_version: "8.3"
-          - mediawiki_version: "1.39"
-            php_version: "8.4"
-
-          - mediawiki_version: "1.45"
-            php_version: "8.1"
+        php_version: ['8.4', '8.3', '8.2']
 
     steps:
       - name: Checkout
@@ -68,10 +57,9 @@ jobs:
         run: |
           case "${{ matrix.mediawiki_version }}" in
             1.45) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
-            1.44) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
-            1.43) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
-            1.39) echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
-            *)    echo "PHP_DEFAULT=8.1" >> $GITHUB_ENV ;;
+            1.44) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
+            1.43) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
+            *)    echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
           esac
 
       - name: Set Xdebug version
@@ -82,11 +70,7 @@ jobs:
           esac
 
       - name: Set Composer version
-        run: |
-          case "${{ matrix.php_version }}" in
-            8.4|8.3|8.2) echo "COMPOSER_VERSION=2.9.2" >> $GITHUB_ENV ;;
-            *)           echo "COMPOSER_VERSION=2.2"   >> $GITHUB_ENV ;;
-          esac
+        run: echo "COMPOSER_VERSION=2.9.7" >> $GITHUB_ENV
 
       - name: generate tags for image
         run: |
