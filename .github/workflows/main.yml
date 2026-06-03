@@ -14,26 +14,37 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.45', '1.44', '1.43']
+        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
         target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ['8.4', '8.3', '8.2']
+        php_version: ['8.5', '8.4', '8.3', '8.2']
+        exclude:
+          - mediawiki_version: '1.46'
+            php_version: '8.3'
+          - mediawiki_version: '1.46'
+            php_version: '8.2'
+          - mediawiki_version: '1.45'
+            php_version: '8.5'
+          - mediawiki_version: '1.44'
+            php_version: '8.5'
+          - mediawiki_version: '1.43'
+            php_version: '8.5'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
         # Docker setup
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           driver-opts: network=host
 
       - name: Cache Docker layers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
           key: ${{ runner.os }}-buildx-${{ matrix.mediawiki_version }}-${{ matrix.php_version }}
@@ -42,7 +53,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -51,11 +62,19 @@ jobs:
       - name: Retrieve MediaWiki version
         run: |
           source ./helpers.sh
-          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
+          mw_ref="$(mediawiki_ref ${{ matrix.mediawiki_version }})"
+          IFS=':' read -r mw_type mw_value mw_sha <<< "$mw_ref"
+          echo "MEDIAWIKI_REF_TYPE=${mw_type}" >> $GITHUB_ENV
+          if [[ "$mw_type" == "tag" ]]; then
+            echo "MEDIAWIKI_FULL_VERSION=${mw_value}" >> $GITHUB_ENV
+          else
+            echo "MEDIAWIKI_FULL_VERSION=${{ matrix.mediawiki_version }}-dev-${mw_sha:0:7}" >> $GITHUB_ENV
+          fi
 
       - name: Set default PHP for this MediaWiki version
         run: |
           case "${{ matrix.mediawiki_version }}" in
+            1.46) echo "PHP_DEFAULT=8.4" >> $GITHUB_ENV ;;
             1.45) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
             1.44) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
             1.43) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
@@ -65,12 +84,13 @@ jobs:
       - name: Set Xdebug version
         run: |
           case "${{ matrix.php_version }}" in
+            8.5) echo "XDEBUG_VERSION=3.5.1" >> $GITHUB_ENV ;;
             8.4) echo "XDEBUG_VERSION=3.4.7" >> $GITHUB_ENV ;;
             *)   echo "XDEBUG_VERSION=3.3.2" >> $GITHUB_ENV ;;
           esac
 
       - name: Set Composer version
-        run: echo "COMPOSER_VERSION=2.9.7" >> $GITHUB_ENV
+        run: echo "COMPOSER_VERSION=2.9.8" >> $GITHUB_ENV
 
       - name: generate tags for image
         run: |
@@ -80,12 +100,13 @@ jobs:
             ${{ env.MEDIAWIKI_FULL_VERSION }} \
             ${{ matrix.mediawiki_version }} \
             ${{ matrix.php_version }} \
-            ${{ env.PHP_DEFAULT }})" >> $GITHUB_ENV
+            ${{ env.PHP_DEFAULT }} \
+            ${{ env.MEDIAWIKI_REF_TYPE }})" >> $GITHUB_ENV
 
       # Image build
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./
           file: ./Dockerfile
