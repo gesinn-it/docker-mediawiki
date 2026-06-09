@@ -70,7 +70,7 @@ FROM mediawiki AS mediawiki-ci
 ARG XDEBUG_VERSION=3.3.2
 
 ### add build tools and patches folder
-RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/3.2.1 \
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/5.1.0 \
 	| tar xzC / --strip-components 1
 
 RUN chmod +x /build-tools/* /tools/*
@@ -83,7 +83,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install XDebug
-RUN pecl install xdebug-${XDEBUG_VERSION} \
+RUN pecl install "https://xdebug.org/files/xdebug-${XDEBUG_VERSION}.tgz" \
  && rm -rf /tmp/pear
 
 # Configure Xdebug
