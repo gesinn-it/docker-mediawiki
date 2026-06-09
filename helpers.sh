@@ -16,14 +16,25 @@ function mediawiki_ref() {
     return 0
   fi
 
-  # Stage 2: fallback to the maintenance branch when no tag exists yet.
-  local branch="REL$(echo "$major_version" | tr '.' '_')"
-  local sha
-  sha=$(git ls-remote --heads https://github.com/wikimedia/mediawiki.git "$branch" |
-    cut -f1)
+  # Stage 2: fallback to the latest dev image available on Docker Hub for this major version.
+  # This ensures we use the exact hash that docker-mediawiki-base actually built,
+  # rather than resolving the wikimedia/mediawiki branch HEAD independently (which may have moved on).
+  local dev_sha
+  dev_sha=$(curl -fsSL "https://hub.docker.com/v2/repositories/gesinn/mediawiki-base/tags?page_size=100" |
+    python3 -c "
+import sys, json, re, datetime
+data = json.load(sys.stdin)
+pattern = re.compile(r'^${major_version}-dev-([0-9a-f]{7})$')
+matches = [(t['last_updated'], re.match(pattern, t['name']).group(1))
+           for t in data.get('results', []) if re.match(pattern, t['name'])]
+if matches:
+    matches.sort(reverse=True)
+    print(matches[0][1])
+")
 
-  if [[ -n "$sha" ]]; then
-    echo "branch:${branch}:${sha}"
+  if [[ -n "$dev_sha" ]]; then
+    local branch="REL$(echo "$major_version" | tr '.' '_')"
+    echo "branch:${branch}:${dev_sha}"
     return 0
   fi
 
