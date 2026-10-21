@@ -4,6 +4,15 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      mediawiki_version:
+        description: 'Only this MediaWiki major version (e.g. 1.43); empty = all'
+        type: string
+        default: ''
+      php_version:
+        description: 'Only this PHP version (e.g. 8.2); empty = all'
+        type: string
+        default: ''
 
 jobs:
 
@@ -14,9 +23,10 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: &mediawiki_versions ['1.46', '1.45', '1.44', '1.43']
+        # a manual run can be restricted to one MediaWiki / PHP version via the workflow_dispatch inputs
+        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.46", "1.45", "1.44", "1.43"]') }}
         target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ['8.5', '8.4', '8.3', '8.2']
+        php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.5", "8.4", "8.3", "8.2"]') }}
         exclude:
           - mediawiki_version: '1.46'
             php_version: '8.3'
@@ -119,6 +129,7 @@ jobs:
             COMPOSER_VERSION=${{ env.COMPOSER_VERSION }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
+          pull: true
           tags: ${{ env.TAGS }}
           target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
@@ -136,7 +147,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: *mediawiki_versions
+        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
         target_repository: ['mediawiki', 'mediawiki-ci']
     env:
       IMAGE_NAMESPACE: gesinn
