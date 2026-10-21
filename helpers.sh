@@ -62,6 +62,7 @@ function generate_tags () {
   local phpVersion=$4
   local phpDefault=$5
   local refType=${6:-tag}
+  local buildTimestamp=${7:-}   # optional, e.g. 20261021T0933: adds an immutable per-build tag
 
   local TAGS=""
 
@@ -75,6 +76,10 @@ function generate_tags () {
   TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion}"
   if [[ "$refType" != "branch" ]]; then
     TAGS+=",${imageRepository}:${mediawikiVersion}-php${phpVersion}"
+  fi
+
+  if [[ -n "$buildTimestamp" ]]; then
+    TAGS+=",${imageRepository}:${mediawikiFullVersion}-php${phpVersion}-${buildTimestamp}"
   fi
 
   echo "$TAGS"

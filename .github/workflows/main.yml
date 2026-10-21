@@ -13,6 +13,14 @@ on:
         description: 'Only this PHP version (e.g. 8.2); empty = all'
         type: string
         default: ''
+      build_timestamp:
+        description: 'Timestamp (UTC, YYYYMMDDTHHMM) for the immutable per-build tag; empty = now. Set by gesinn-it/docker-mediawiki-base so that a whole chain shares it'
+        type: string
+        default: ''
+      dry_run:
+        description: 'Build amd64 only: do not push images'
+        type: boolean
+        default: false
 
 jobs:
 
@@ -44,6 +52,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up QEMU
+        if: ${{ !inputs.dry_run }}
         uses: docker/setup-qemu-action@v4
 
         # Docker setup
@@ -102,6 +111,25 @@ jobs:
       - name: Set Composer version
         run: echo "COMPOSER_VERSION=2.9.8" >> $GITHUB_ENV
 
+      - name: Resolve base image
+        run: |
+          base="gesinn/mediawiki-base:${MEDIAWIKI_FULL_VERSION}-php${{ matrix.php_version }}-apache"
+          digest="$(docker buildx imagetools inspect "$base" --format '{{.Manifest.Digest}}')"
+          echo "BASE_IMAGE=${base}" >> $GITHUB_ENV
+          echo "BASE_DIGEST=${digest}" >> $GITHUB_ENV
+
+      - name: Set build metadata
+        env:
+          INPUT_BUILD_TIMESTAMP: ${{ inputs.build_timestamp }}
+        run: |
+          timestamp="${INPUT_BUILD_TIMESTAMP:-$(date -u +%Y%m%dT%H%M)}"
+          if [[ ! "$timestamp" =~ ^[0-9]{8}T[0-9]{4}$ ]]; then
+            echo "build_timestamp must look like 20261021T0933, got: ${timestamp}" >&2
+            exit 1
+          fi
+          echo "BUILD_TIMESTAMP=${timestamp}" >> $GITHUB_ENV
+          echo "IMAGE_CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
       - name: generate tags for image
         run: |
           source ./helpers.sh
@@ -111,7 +139,8 @@ jobs:
             ${{ matrix.mediawiki_version }} \
             ${{ matrix.php_version }} \
             ${{ env.PHP_DEFAULT }} \
-            ${{ env.MEDIAWIKI_REF_TYPE }})" >> $GITHUB_ENV
+            ${{ env.MEDIAWIKI_REF_TYPE }} \
+            ${{ env.BUILD_TIMESTAMP }})" >> $GITHUB_ENV
 
       # Image build
       - name: Build and push
@@ -127,14 +156,33 @@ jobs:
             PHP_VERSION=${{ matrix.php_version }}
             XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
             COMPOSER_VERSION=${{ env.COMPOSER_VERSION }}
+            MEDIAWIKI_BASE_DIGEST=@${{ env.BASE_DIGEST }}
           builder: ${{ steps.buildx.outputs.name }}
-          push: true
+          push: ${{ !inputs.dry_run }}
           pull: true
           tags: ${{ env.TAGS }}
           target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }},mode=max
-          platforms: linux/amd64,linux/arm64
+          # a dry run only builds amd64 (no QEMU emulation), which is much faster
+          platforms: ${{ inputs.dry_run && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          labels: |
+            org.opencontainers.image.base.name=docker.io/${{ env.BASE_IMAGE }}
+            org.opencontainers.image.base.digest=${{ env.BASE_DIGEST }}
+            org.opencontainers.image.created=${{ env.IMAGE_CREATED }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            it.gesinn.php.version=${{ matrix.php_version }}
+          annotations: |
+            index:org.opencontainers.image.base.name=docker.io/${{ env.BASE_IMAGE }}
+            index:org.opencontainers.image.base.digest=${{ env.BASE_DIGEST }}
+            index:org.opencontainers.image.created=${{ env.IMAGE_CREATED }}
+            index:org.opencontainers.image.revision=${{ github.sha }}
+            index:org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            index:it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            index:it.gesinn.php.version=${{ matrix.php_version }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
@@ -142,7 +190,7 @@ jobs:
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.event_name == 'push' && needs.build.result == 'success'
+    if: needs.build.result == 'success' && !inputs.dry_run
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -189,6 +237,24 @@ jobs:
           fi
 
           major="${{ matrix.mediawiki_version }}"
+
+          # Immutable per-build tags (<version>-php<v>-YYYYMMDDTHHMM): keep the latest 8 per MediaWiki major + PHP version.
+          # Runs first because the dev cleanup below exits early when there is nothing to do.
+          mapfile -t old_build_tags < <(
+            awk -F '\t' -v m="$major" -v d8='[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' -v d4='[0-9][0-9][0-9][0-9]' '
+              match($1, "^" m "[.-].*-php[0-9.]+-" d8 "T" d4 "$") {
+                tag = $1
+                ts = substr(tag, length(tag) - 12)
+                prefix = substr(tag, 1, length(tag) - 14)
+                sub(/^.*-php/, "", prefix)
+                print prefix "\t" ts "\t" tag
+              }
+            ' "$tags_file" | sort -t $'\t' -k1,1 -k2,2r | awk -F '\t' '{ if (++n[$1] > 8) print $3 }'
+          )
+          for tag_name in "${old_build_tags[@]}"; do
+            echo "Deleting ${IMAGE_NAMESPACE}/${IMAGE_REPOSITORY}:${tag_name} (retention: latest 8 build tags)"
+            curl -fsSL -X DELETE -H "Authorization: JWT ${hub_jwt}" "${hub_repo}/tags/${tag_name}/" > /dev/null || true
+          done
           ref_info="$(mediawiki_ref "$major")"
           IFS=':' read -r ref_type _ _ <<< "$ref_info"
 
