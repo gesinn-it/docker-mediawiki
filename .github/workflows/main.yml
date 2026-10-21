@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
+      mediawiki_version:
+        description: 'Accepted for compatibility with gesinn-it/docker-mediawiki-base; this branch only builds 1.39'
+        type: string
+        default: ''
       php_version:
         description: 'Only this PHP version (e.g. 8.2); empty = all'
         type: string
