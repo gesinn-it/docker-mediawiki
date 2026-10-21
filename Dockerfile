@@ -8,10 +8,12 @@
 ARG MEDIAWIKI_VERSION=1.45.1
 ARG PHP_VERSION=8.3
 ARG COMPOSER_VERSION=2.9.8
+# optional, "@sha256:...": pins the gesinn/mediawiki-base image to the digest recorded in the labels
+ARG MEDIAWIKI_BASE_DIGEST=
 
 FROM composer:${COMPOSER_VERSION} AS composer
 
-FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache AS mediawiki
+FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache${MEDIAWIKI_BASE_DIGEST} AS mediawiki
 
 # Bashrc Alias
 RUN echo "alias ll='ls -la'" >> /etc/bash.bashrc && \
