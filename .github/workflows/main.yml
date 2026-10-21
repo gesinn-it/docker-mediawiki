@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up QEMU
-        if: false  # TEMP: amd64 only, restore: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         uses: docker/setup-qemu-action@v4
 
         # Docker setup
@@ -154,7 +154,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }},mode=max
           # a dry run only builds amd64 (no QEMU emulation), which is much faster
-          platforms: linux/amd64  # TEMP: restore: ${{ inputs.dry_run && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          platforms: ${{ inputs.dry_run && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           labels: |
             org.opencontainers.image.base.name=docker.io/${{ env.BASE_IMAGE }}
             org.opencontainers.image.base.digest=${{ env.BASE_DIGEST }}
