@@ -115,8 +115,14 @@ jobs:
         run: |
           base="gesinn/mediawiki-base:${MEDIAWIKI_FULL_VERSION}-php${{ matrix.php_version }}-apache"
           digest="$(docker buildx imagetools inspect "$base" --format '{{.Manifest.Digest}}')"
+          # effective PHP version (e.g. 8.2.35) as recorded in the base image, falls back to the matrix value
+          php_full="$(docker buildx imagetools inspect "$base" --format '{{index .Manifest.Annotations "it.gesinn.php.version"}}' 2>/dev/null || true)"
+          if [[ -z "$php_full" || "$php_full" == "<no value>" ]]; then
+            php_full="${{ matrix.php_version }}"
+          fi
           echo "BASE_IMAGE=${base}" >> $GITHUB_ENV
           echo "BASE_DIGEST=${digest}" >> $GITHUB_ENV
+          echo "PHP_FULL_VERSION=${php_full}" >> $GITHUB_ENV
 
       - name: Set build metadata
         env:
@@ -174,7 +180,7 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
-            it.gesinn.php.version=${{ matrix.php_version }}
+            it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
           annotations: |
             index:org.opencontainers.image.base.name=docker.io/${{ env.BASE_IMAGE }}
             index:org.opencontainers.image.base.digest=${{ env.BASE_DIGEST }}
@@ -182,7 +188,7 @@ jobs:
             index:org.opencontainers.image.revision=${{ github.sha }}
             index:org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             index:it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
-            index:it.gesinn.php.version=${{ matrix.php_version }}
+            index:it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
