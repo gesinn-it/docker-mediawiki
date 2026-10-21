@@ -18,17 +18,15 @@ jobs:
 
   build:
     runs-on: ubuntu-24.04
-    if: >-
-      (inputs.mediawiki_version == '' || inputs.mediawiki_version == matrix.mediawiki_version) &&
-      (inputs.php_version == '' || inputs.php_version == matrix.php_version)
 
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: &mediawiki_versions ['1.46', '1.45', '1.44', '1.43']
+        # a manual run can be restricted to one MediaWiki / PHP version via the workflow_dispatch inputs
+        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.46", "1.45", "1.44", "1.43"]') }}
         target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ['8.5', '8.4', '8.3', '8.2']
+        php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.5", "8.4", "8.3", "8.2"]') }}
         exclude:
           - mediawiki_version: '1.46'
             php_version: '8.3'
@@ -149,7 +147,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: *mediawiki_versions
+        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
         target_repository: ['mediawiki', 'mediawiki-ci']
     env:
       IMAGE_NAMESPACE: gesinn
