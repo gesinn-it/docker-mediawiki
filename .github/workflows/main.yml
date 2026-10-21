@@ -5,10 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-      mediawiki_version:
-        description: 'Only this MediaWiki major version (e.g. 1.43); empty = all'
-        type: string
-        default: ''
+      dry_run:
+        description: 'Build amd64 only: do not push images'
+        type: boolean
+        default: false
       php_version:
         description: 'Only this PHP version (e.g. 8.2); empty = all'
         type: string
@@ -23,27 +23,17 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        # a manual run can be restricted to one MediaWiki / PHP version via the workflow_dispatch inputs
-        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.46", "1.45", "1.44", "1.43"]') }}
+        mediawiki_version: ['1.39']
         target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.5", "8.4", "8.3", "8.2"]') }}
-        exclude:
-          - mediawiki_version: '1.46'
-            php_version: '8.3'
-          - mediawiki_version: '1.46'
-            php_version: '8.2'
-          - mediawiki_version: '1.45'
-            php_version: '8.5'
-          - mediawiki_version: '1.44'
-            php_version: '8.5'
-          - mediawiki_version: '1.43'
-            php_version: '8.5'
+        # a manual run can be restricted to one PHP version via the workflow_dispatch input
+        php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.2", "8.1"]') }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Set up QEMU
+        if: ${{ !inputs.dry_run }}
         uses: docker/setup-qemu-action@v4
 
         # Docker setup
@@ -128,13 +118,14 @@ jobs:
             XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
             COMPOSER_VERSION=${{ env.COMPOSER_VERSION }}
           builder: ${{ steps.buildx.outputs.name }}
-          push: true
+          push: ${{ !inputs.dry_run }}
           pull: true
           tags: ${{ env.TAGS }}
           target: ${{ matrix.target_repository }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }},mode=max
-          platforms: linux/amd64,linux/arm64
+          # a dry run only builds amd64 (no QEMU emulation), which is much faster
+          platforms: ${{ inputs.dry_run && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
@@ -147,7 +138,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
+        mediawiki_version: ['1.39']
         target_repository: ['mediawiki', 'mediawiki-ci']
     env:
       IMAGE_NAMESPACE: gesinn
