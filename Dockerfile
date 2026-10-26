@@ -10,8 +10,8 @@
 # The pinned versions are kept up to date by Renovate (see renovate.json).
 # The CI workflow reads COMPOSER_VERSION and MEDIAWIKI_TOOLS_VERSION from here for the image labels.
 ###################################################
-ARG MEDIAWIKI_VERSION=1.45.1
-ARG PHP_VERSION=8.3
+ARG MEDIAWIKI_VERSION=1.46.2
+ARG PHP_VERSION=8.4
 ARG COMPOSER_VERSION=2.9.8
 # optional, "@sha256:...": pins the gesinn/mediawiki-base image to the digest recorded in the labels
 ARG MEDIAWIKI_BASE_DIGEST=
