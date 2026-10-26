@@ -32,7 +32,7 @@ jobs:
       max-parallel: 2
       matrix:
         # a manual run can be restricted to one MediaWiki / PHP version via the workflow_dispatch inputs
-        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.46", "1.45", "1.44", "1.43"]') }}
+        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.46", "1.45", "1.43"]') }}
         target_repository: ['mediawiki', 'mediawiki-ci']
         php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.5", "8.4", "8.3", "8.2"]') }}
         exclude:
@@ -41,8 +41,6 @@ jobs:
           - mediawiki_version: '1.46'
             php_version: '8.2'
           - mediawiki_version: '1.45'
-            php_version: '8.5'
-          - mediawiki_version: '1.44'
             php_version: '8.5'
           - mediawiki_version: '1.43'
             php_version: '8.5'
@@ -95,7 +93,6 @@ jobs:
           case "${{ matrix.mediawiki_version }}" in
             1.46) echo "PHP_DEFAULT=8.4" >> $GITHUB_ENV ;;
             1.45) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
-            1.44) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
             1.43) echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
             *)    echo "PHP_DEFAULT=8.2" >> $GITHUB_ENV ;;
           esac
@@ -108,8 +105,17 @@ jobs:
             *)   echo "XDEBUG_VERSION=3.3.2" >> $GITHUB_ENV ;;
           esac
 
-      - name: Set Composer version
-        run: echo "COMPOSER_VERSION=2.9.8" >> $GITHUB_ENV
+      # single source of truth: the ARG defaults in the Dockerfile (kept up to date by Renovate)
+      - name: Read pinned versions from Dockerfile
+        run: |
+          for name in COMPOSER_VERSION MEDIAWIKI_TOOLS_VERSION; do
+            value="$(sed -n "s/^ *ARG ${name}=//p" Dockerfile)"
+            if [[ -z "$value" ]]; then
+              echo "ARG ${name} not found in Dockerfile" >&2
+              exit 1
+            fi
+            echo "${name}=${value}" >> $GITHUB_ENV
+          done
 
       - name: Resolve base image
         run: |
@@ -148,6 +154,50 @@ jobs:
             ${{ env.MEDIAWIKI_REF_TYPE }} \
             ${{ env.BUILD_TIMESTAMP }})" >> $GITHUB_ENV
 
+      # Build once for linux/amd64 and load the image, to read the versions of the packages
+      # the Dockerfile adds on top of the base image. The final build below reuses its layers.
+      - name: Build image for inspection
+        uses: docker/build-push-action@v7
+        with:
+          context: ./
+          file: ./Dockerfile
+          network: host
+          allow: network.host
+          build-args: |
+            MEDIAWIKI_VERSION=${{ env.MEDIAWIKI_FULL_VERSION }}
+            PHP_VERSION=${{ matrix.php_version }}
+            XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
+            MEDIAWIKI_BASE_DIGEST=@${{ env.BASE_DIGEST }}
+          builder: ${{ steps.buildx.outputs.name }}
+          load: true
+          pull: true
+          tags: inspect:local
+          target: ${{ matrix.target_repository }}
+          platforms: linux/amd64
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php${{ matrix.php_version }}
+
+      - name: Read package versions from the image
+        run: |
+          source ./helpers.sh
+          labels=""
+          annotations=""
+          for pkg in "${INSTALLED_PACKAGES[@]}"; do
+            # packages that this image target does not install (e.g. libpq-dev in mediawiki) are skipped
+            version="$(docker run --rm --entrypoint dpkg-query inspect:local -W -f='${Version}' "$pkg" 2>/dev/null)" || continue
+            [[ -n "$version" ]] || continue
+            labels+="it.gesinn.${pkg}.version=${version}"$'\n'
+            annotations+="index:it.gesinn.${pkg}.version=${version}"$'\n'
+          done
+          {
+            echo "PACKAGE_LABELS<<PACKAGE_LABELS_EOF"
+            printf '%s' "$labels"
+            echo "PACKAGE_LABELS_EOF"
+            echo "PACKAGE_ANNOTATIONS<<PACKAGE_ANNOTATIONS_EOF"
+            printf '%s' "$annotations"
+            echo "PACKAGE_ANNOTATIONS_EOF"
+          } >> $GITHUB_ENV
+          printf '%s' "$labels"
+
       # Image build
       - name: Build and push
         id: docker_build
@@ -161,7 +211,6 @@ jobs:
             MEDIAWIKI_VERSION=${{ env.MEDIAWIKI_FULL_VERSION }}
             PHP_VERSION=${{ matrix.php_version }}
             XDEBUG_VERSION=${{ env.XDEBUG_VERSION }}
-            COMPOSER_VERSION=${{ env.COMPOSER_VERSION }}
             MEDIAWIKI_BASE_DIGEST=@${{ env.BASE_DIGEST }}
           builder: ${{ steps.buildx.outputs.name }}
           push: ${{ !inputs.dry_run }}
@@ -181,6 +230,10 @@ jobs:
             org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            it.gesinn.composer.version=${{ env.COMPOSER_VERSION }}
+            ${{ matrix.target_repository == 'mediawiki-ci' && format('it.gesinn.xdebug.version={0}', env.XDEBUG_VERSION) || '' }}
+            ${{ matrix.target_repository == 'mediawiki-ci' && format('it.gesinn.tools.version={0}', env.MEDIAWIKI_TOOLS_VERSION) || '' }}
+            ${{ env.PACKAGE_LABELS }}
           annotations: |
             index:org.opencontainers.image.base.name=docker.io/${{ env.BASE_IMAGE }}
             index:org.opencontainers.image.base.digest=${{ env.BASE_DIGEST }}
@@ -189,9 +242,45 @@ jobs:
             index:org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             index:it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             index:it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            index:it.gesinn.composer.version=${{ env.COMPOSER_VERSION }}
+            ${{ matrix.target_repository == 'mediawiki-ci' && format('index:it.gesinn.xdebug.version={0}', env.XDEBUG_VERSION) || '' }}
+            ${{ matrix.target_repository == 'mediawiki-ci' && format('index:it.gesinn.tools.version={0}', env.MEDIAWIKI_TOOLS_VERSION) || '' }}
+            ${{ env.PACKAGE_ANNOTATIONS }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+  # The version table in the README is generated from the labels of the published images.
+  # Only on main: a manual run from another branch must not commit there.
+  update-readme:
+    needs: build
+    if: needs.build.result == 'success' && !inputs.dry_run && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Update version table
+        run: ./update_readme_table.sh
+
+      - name: Commit
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README version table is up to date" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: update version table [skip ci]" README.md
+          git pull --rebase
+          git push
 
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
@@ -201,7 +290,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
+        mediawiki_version: ['1.46', '1.45', '1.43']
         target_repository: ['mediawiki', 'mediawiki-ci']
     env:
       IMAGE_NAMESPACE: gesinn

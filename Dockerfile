@@ -4,6 +4,11 @@
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
 # XDEBUG_VERSION: Xdebug Version
+# COMPOSER_VERSION: Composer Version
+# MEDIAWIKI_TOOLS_VERSION: version of gesinn-it-pub/docker-mediawiki-tools
+#
+# The pinned versions are kept up to date by Renovate (see renovate.json).
+# The CI workflow reads COMPOSER_VERSION and MEDIAWIKI_TOOLS_VERSION from here for the image labels.
 ###################################################
 ARG MEDIAWIKI_VERSION=1.45.1
 ARG PHP_VERSION=8.3
@@ -70,9 +75,10 @@ RUN composer config --global audit.block-insecure false && \
 FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.3.2
+ARG MEDIAWIKI_TOOLS_VERSION=5.1.0
 
 ### add build tools and patches folder
-RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/5.1.0 \
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${MEDIAWIKI_TOOLS_VERSION} \
 	| tar xzC / --strip-components 1
 
 RUN chmod +x /build-tools/* /tools/*
