@@ -12,7 +12,7 @@
 ###################################################
 ARG MEDIAWIKI_VERSION=1.46.2
 ARG PHP_VERSION=8.4
-ARG COMPOSER_VERSION=2.9.8
+ARG COMPOSER_VERSION=2.10.3
 # optional, "@sha256:...": pins the gesinn/mediawiki-base image to the digest recorded in the labels
 ARG MEDIAWIKI_BASE_DIGEST=
 
@@ -57,17 +57,20 @@ RUN echo "{}" > composer.local.json && \
 #     --no-progress \
 #     --no-scripts
 
-# TEMPORARY: Composer >=2.4 blocks builds on dev-only security advisories
-# (e.g. PHPUnit) even when running with --no-dev.
-# This image intentionally excludes all dev dependencies, so disabling
-# the audit here is safe. Remove once MediaWiki updates its dev constraints.
-RUN composer config --global audit.block-insecure false && \
+# Composer does not block on security advisories: a finding in a dev dependency (which this image
+# does not install) must not stop the build. The audit gate below decides instead, see audit-gate.php.
+RUN composer config --global policy.advisories.block false && \
     composer update \
     --no-dev \
     --prefer-dist \
     --no-interaction \
     --no-progress \
     --no-scripts
+
+# Fail on high/critical advisories in the installed (non-dev) packages unless accepted in audit-triage.json
+RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
+    --mount=type=bind,source=audit-triage.json,target=/tmp/audit-triage.json \
+    php /tmp/audit-gate.php /tmp/audit-triage.json strict --no-dev
 
 ###################################################
 # gesinn-it/mediawiki-ci:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache
@@ -106,11 +109,12 @@ RUN docker-php-ext-install pgsql
 #     --no-interaction \
 #     --no-progress
 
-# TEMPORARY: Composer blocks dependency resolution due to dev-only
-# security advisories (e.g. PHPUnit). This does not affect runtime
-# dependencies. Remove once MediaWiki updates its dev constraints.
-RUN composer config --global audit.block-insecure false && \
-    composer update \
+# The dev tools are only used by this CI image: advisories in them are reported, but do not fail the build
+RUN composer update \
     --prefer-dist \
     --no-interaction \
     --no-progress
+
+RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
+    --mount=type=bind,source=audit-triage.json,target=/tmp/audit-triage.json \
+    php /tmp/audit-gate.php /tmp/audit-triage.json warn

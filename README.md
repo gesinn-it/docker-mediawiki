@@ -35,6 +35,27 @@ docker buildx imagetools inspect gesinn/mediawiki-ci:1.43-php8.2 --format '{{jso
 | `it.gesinn.<package>.version` | installed Debian package version of every package the Dockerfile adds (`sudo`, `unzip`, `less`, `nano`, `nodejs`, `grunt`, `npm`, `wget`, `mariadb-client`, plus `libpq-dev` in `mediawiki-ci`); the list is `INSTALLED_PACKAGES` in `helpers.sh` |
 | `it.gesinn.tools.version` | version of [docker-mediawiki-tools](https://github.com/gesinn-it-pub/docker-mediawiki-tools) (`mediawiki-ci` only) |
 
+## Security advisories
+
+Composer does not block the image build on security advisories (`policy.advisories.block` is `false`): a finding in a dev dependency, which the `mediawiki` image does not even install, must not stop a build. Instead the build runs an audit gate (`audit-gate.php`) after `composer update`:
+
+| Image | Gate | Effect |
+|---|---|---|
+| `mediawiki` | `strict`, installed (non-dev) packages | high or critical advisories fail the build, everything else is reported as a warning |
+| `mediawiki-ci` | `warn`, including the dev tools | all advisories are reported, none fails the build |
+
+Advisories without a severity are treated as warnings. The warnings are part of the build log.
+
+A high or critical advisory that cannot be fixed (e.g. because MediaWiki pins the vulnerable version) is accepted in `audit-triage.json`, with a reason and a date to review it again:
+
+```json
+{
+	"PKSA-xxxx-xxxx-xxxx": { "reason": "why this is acceptable for now", "review": "2026-12-01" }
+}
+```
+
+Accepted advisories are still printed. An expired review date is printed as a warning, it never fails a build.
+
 ## Important directories
 - `/etc/apache`
 - `/usr/local/etc/php/`
