@@ -1,0 +1,70 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended"],
+	"semanticCommits": "enabled",
+	"rebaseWhen": "behind-base-branch",
+	"customManagers": [
+		{
+			"customType": "regex",
+			"description": "Track the version of docker-mediawiki-tools pinned as MEDIAWIKI_TOOLS_VERSION in the Dockerfile, which Renovate's built-in managers do not detect.",
+			"managerFilePatterns": ["/^Dockerfile$/"],
+			"matchStrings": [
+				"ARG MEDIAWIKI_TOOLS_VERSION=(?<currentValue>[0-9.]+)"
+			],
+			"depNameTemplate": "docker-mediawiki-tools",
+			"datasourceTemplate": "github-tags",
+			"packageNameTemplate": "gesinn-it-pub/docker-mediawiki-tools"
+		},
+		{
+			"customType": "regex",
+			"description": "Track the Xdebug versions of the PHP 8.5 and 8.4 entries in the workflow's 'Set Xdebug version' step. Each PHP version stays on its own Xdebug minor line, see the packageRules.",
+			"managerFilePatterns": ["/^\\.github/workflows/main\\.yml$/"],
+			"matchStrings": [
+				"(?<php>8\\.[45])\\) echo \"XDEBUG_VERSION=(?<currentValue>[0-9.]+)\""
+			],
+			"depNameTemplate": "xdebug (PHP {{{php}}})",
+			"datasourceTemplate": "github-tags",
+			"packageNameTemplate": "xdebug/xdebug"
+		},
+		{
+			"customType": "regex",
+			"description": "Track the Xdebug version used for all other PHP versions (8.3, 8.2): the default branch of the workflow's 'Set Xdebug version' step and the fallback ARG in the Dockerfile.",
+			"managerFilePatterns": ["/^\\.github/workflows/main\\.yml$/", "/^Dockerfile$/"],
+			"matchStrings": [
+				"\\*\\)\\s+echo \"XDEBUG_VERSION=(?<currentValue>[0-9.]+)\"",
+				"ARG XDEBUG_VERSION=(?<currentValue>[0-9.]+)"
+			],
+			"depNameTemplate": "xdebug (PHP 8.3)",
+			"datasourceTemplate": "github-tags",
+			"packageNameTemplate": "xdebug/xdebug"
+		}
+	],
+	"packageRules": [
+		{
+			"description": "Keep every PHP version on its Xdebug minor line; stable releases only (the upstream tags also contain RC releases).",
+			"matchDepNames": ["xdebug (PHP 8.5)"],
+			"allowedVersions": "/^3\\.5\\.[0-9]+$/"
+		},
+		{
+			"matchDepNames": ["xdebug (PHP 8.4)"],
+			"allowedVersions": "/^3\\.4\\.[0-9]+$/"
+		},
+		{
+			"matchDepNames": ["xdebug (PHP 8.3)"],
+			"allowedVersions": "/^3\\.3\\.[0-9]+$/"
+		},
+		{
+			"description": "The base image is resolved by the workflow (MediaWiki version and digest), the ARG defaults in the Dockerfile are only a fallback.",
+			"matchPackageNames": ["gesinn/mediawiki-base"],
+			"enabled": false
+		},
+		{
+			"matchManagers": ["github-actions"],
+			"semanticCommitType": "ci"
+		},
+		{
+			"matchManagers": ["dockerfile", "custom.regex"],
+			"semanticCommitType": "build"
+		}
+	]
+}
