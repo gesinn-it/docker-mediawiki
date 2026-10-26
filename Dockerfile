@@ -78,7 +78,7 @@ RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
 FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.3.2
-ARG MEDIAWIKI_TOOLS_VERSION=5.1.0
+ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
 
 ### add build tools and patches folder
 RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${MEDIAWIKI_TOOLS_VERSION} \
