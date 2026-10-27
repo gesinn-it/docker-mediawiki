@@ -25,7 +25,7 @@ grep -qxF "$start" "$readme" && grep -qxF "$end" "$readme" \
 
 matrix="$(curl -fsSL "$matrix_url")" || { echo "Error: cannot fetch ${matrix_url}" >&2; exit 1; }
 
-table="| MediaWiki | PHP | Composer | Node.js | npm | Grunt | MariaDB client | Xdebug | docker-mediawiki-tools |"$'\n'"|---|---|---|---|---|---|---|---|---|"
+table="| MediaWiki | PHP | Composer | Node.js | npm | MariaDB client | Xdebug | docker-mediawiki-tools |"$'\n'"|---|---|---|---|---|---|---|---|"
 while read -r entry; do
 	mw="$(jq -r .mediawiki_version <<< "$entry")"
 	php="$(jq -r .php_version <<< "$entry")"
@@ -55,7 +55,7 @@ while read -r entry; do
 	[[ "$php" == "$php_default" ]] && php_full+=" (default)"
 	[[ "$ref_type" == "tag" ]] || full_version+=" (pre-release)"
 
-	table+=$'\n'"| ${full_version} | ${php_full} | $(label it.gesinn.composer.version) | $(label it.gesinn.nodejs.version) | $(label it.gesinn.npm.version) | $(label it.gesinn.grunt.version) | $(label it.gesinn.mariadb-client.version) | $(label it.gesinn.xdebug.version) | $(label it.gesinn.tools.version) |"
+	table+=$'\n'"| ${full_version} | ${php_full} | $(label it.gesinn.composer.version) | $(label it.gesinn.nodejs.version) | $(label it.gesinn.npm.version) | $(label it.gesinn.mariadb-client.version) | $(label it.gesinn.xdebug.version) | $(label it.gesinn.tools.version) |"
 done < <(jq -c '.[] | select(.downstream == true)' <<< "$matrix")
 
 tmp="$(mktemp)"
