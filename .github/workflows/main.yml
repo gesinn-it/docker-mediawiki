@@ -185,6 +185,15 @@ jobs:
             labels+="it.gesinn.${pkg}.version=${version}"$'\n'
             annotations+="index:it.gesinn.${pkg}.version=${version}"$'\n'
           done
+          # Node.js and npm: Debian packages in mediawiki, the binaries of the official node image in mediawiki-ci
+          for entry in nodejs:node npm:npm; do
+            label="${entry%%:*}"
+            cmd="${entry##*:}"
+            version="$(docker run --rm --entrypoint "$cmd" inspect:local --version 2>/dev/null | tr -d 'v\r\n')" || continue
+            [[ -n "$version" ]] || continue
+            labels+="it.gesinn.${label}.version=${version}"$'\n'
+            annotations+="index:it.gesinn.${label}.version=${version}"$'\n'
+          done
           {
             echo "PACKAGE_LABELS<<PACKAGE_LABELS_EOF"
             printf '%s' "$labels"

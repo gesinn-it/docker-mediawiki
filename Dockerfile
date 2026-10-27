@@ -18,6 +18,9 @@ ARG MEDIAWIKI_BASE_DIGEST=
 
 FROM composer:${COMPOSER_VERSION} AS composer
 
+# Node.js for the CI image: the Debian package is too old (EOL), see the mediawiki-ci stage
+FROM node:24-trixie-slim AS node
+
 FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache${MEDIAWIKI_BASE_DIGEST} AS mediawiki
 
 # Bashrc Alias
@@ -86,6 +89,15 @@ RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${M
 
 RUN chmod +x /build-tools/* /tools/*
 ENV PATH="/tools:/build-tools:${PATH}"
+
+# Node.js from the official image. /usr/local/bin comes before /usr/bin in the PATH, so these shadow
+# the Debian packages (nodejs, npm) that the mediawiki stage still installs.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    node --version && npm --version
 
 # Install required packages
 RUN apt-get update && \

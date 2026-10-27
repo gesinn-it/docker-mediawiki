@@ -3,7 +3,9 @@
 # Debian packages that the Dockerfile adds on top of the base image and whose installed versions are
 # published as image labels (it.gesinn.<package>.version). Keep in sync with the apt-get install
 # lines of the Dockerfile. mariadb-client is the real package behind default-mysql-client.
-INSTALLED_PACKAGES=(sudo unzip less nano nodejs grunt npm wget mariadb-client libpq-dev)
+# Node.js and npm are not listed: the CI image uses the binaries of the official node image, their
+# versions are read from node and npm (see the workflow).
+INSTALLED_PACKAGES=(sudo unzip less nano grunt wget mariadb-client libpq-dev)
 
 function mediawiki_ref() {
   local major_version="$1"
