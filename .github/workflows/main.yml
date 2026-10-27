@@ -24,28 +24,45 @@ on:
 
 jobs:
 
+  # The combinations to build are listed in matrix.json. A manual run can be restricted to one MediaWiki and / or
+  # PHP version via the workflow_dispatch inputs; the images of the base workflow trigger exactly one entry.
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      majors: ${{ steps.plan.outputs.majors }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Select the entries to build
+        id: plan
+        env:
+          INPUT_MEDIAWIKI_VERSION: ${{ inputs.mediawiki_version }}
+          INPUT_PHP_VERSION: ${{ inputs.php_version }}
+        run: |
+          entries="$(jq -c --arg mw "$INPUT_MEDIAWIKI_VERSION" --arg php "$INPUT_PHP_VERSION" \
+            '[.[] | select(($mw == "" or .mediawiki_version == $mw) and ($php == "" or .php_version == $php))]' matrix.json)"
+          if [[ "$entries" == "[]" ]]; then
+            echo "No entry in matrix.json for MediaWiki '${INPUT_MEDIAWIKI_VERSION}' and PHP '${INPUT_PHP_VERSION}'" >&2
+            exit 1
+          fi
+          # every entry is built for both image types
+          echo "matrix=$(jq -c '[.[] | . as $e | ("mediawiki", "mediawiki-ci") | $e + {target_repository: .}]' <<< "$entries")" >> "$GITHUB_OUTPUT"
+          echo "majors=$(jq -c '[.[].mediawiki_version] | unique' <<< "$entries")" >> "$GITHUB_OUTPUT"
+          echo "### Entries to build" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.[] | "- MediaWiki \(.mediawiki_version), PHP \(.php_version) (default PHP \(.php_default))"' <<< "$entries" >> "$GITHUB_STEP_SUMMARY"
+
   build:
+    needs: plan
+    name: build (${{ matrix.mediawiki_version }}, ${{ matrix.target_repository }}, ${{ matrix.php_version }})
     runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        # a manual run can be restricted to one MediaWiki / PHP version via the workflow_dispatch inputs
-        mediawiki_version: ${{ fromJSON(inputs.mediawiki_version != '' && format('["{0}"]', inputs.mediawiki_version) || '["1.47", "1.46", "1.43"]') }}
-        target_repository: ['mediawiki', 'mediawiki-ci']
-        php_version: ${{ fromJSON(inputs.php_version != '' && format('["{0}"]', inputs.php_version) || '["8.5", "8.4", "8.3"]') }}
-        exclude:
-          - mediawiki_version: '1.47'
-            php_version: '8.4'
-          - mediawiki_version: '1.47'
-            php_version: '8.3'
-          - mediawiki_version: '1.46'
-            php_version: '8.3'
-          - mediawiki_version: '1.43'
-            php_version: '8.5'
-          - mediawiki_version: '1.43'
-            php_version: '8.4'
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -89,15 +106,6 @@ jobs:
           else
             echo "MEDIAWIKI_FULL_VERSION=${{ matrix.mediawiki_version }}-dev-${mw_sha:0:7}" >> $GITHUB_ENV
           fi
-
-      - name: Set default PHP for this MediaWiki version
-        run: |
-          case "${{ matrix.mediawiki_version }}" in
-            1.47) echo "PHP_DEFAULT=8.5" >> $GITHUB_ENV ;;
-            1.46) echo "PHP_DEFAULT=8.4" >> $GITHUB_ENV ;;
-            1.43) echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
-            *)    echo "PHP_DEFAULT=8.3" >> $GITHUB_ENV ;;
-          esac
 
       # single source of truth: the ARG defaults in the Dockerfile (kept up to date by Renovate)
       - name: Read pinned versions from Dockerfile
@@ -144,7 +152,7 @@ jobs:
             ${{ env.MEDIAWIKI_FULL_VERSION }} \
             ${{ matrix.mediawiki_version }} \
             ${{ matrix.php_version }} \
-            ${{ env.PHP_DEFAULT }} \
+            ${{ matrix.php_default }} \
             ${{ env.MEDIAWIKI_REF_TYPE }} \
             ${{ env.BUILD_TIMESTAMP }})" >> $GITHUB_ENV
 
@@ -254,7 +262,7 @@ jobs:
   # The version table in the README is generated from the labels of the published images.
   # Only on main: a manual run from another branch must not commit there.
   update-readme:
-    needs: build
+    needs: [plan, build]
     if: needs.build.result == 'success' && !inputs.dry_run && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
@@ -285,13 +293,13 @@ jobs:
 
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [plan, build]
     if: needs.build.result == 'success' && !inputs.dry_run
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mediawiki_version: ['1.47', '1.46', '1.43']
+        mediawiki_version: ${{ fromJSON(needs.plan.outputs.majors) }}
         target_repository: ['mediawiki', 'mediawiki-ci']
     env:
       IMAGE_NAMESPACE: gesinn

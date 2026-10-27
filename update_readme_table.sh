@@ -3,19 +3,16 @@
 # <!-- versions:end --> markers) from the labels of the published images.
 # The table is built from the mediawiki-ci image, which carries all labels.
 #
-# The combinations are the entries of gesinn-it/docker-mediawiki-base's matrix.json that
-# trigger a build in this repository ("downstream": true).
+# The combinations are the entries of matrix.json.
 #
 # Environment:
 #   IMAGE_REPOSITORY   published image, default gesinn/mediawiki-ci
-#   MATRIX_URL         matrix.json of docker-mediawiki-base
 set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 source ./helpers.sh
 
 repository="${IMAGE_REPOSITORY:-gesinn/mediawiki-ci}"
-matrix_url="${MATRIX_URL:-https://raw.githubusercontent.com/gesinn-it/docker-mediawiki-base/main/matrix.json}"
 readme="README.md"
 start='<!-- versions:start -->'
 end='<!-- versions:end -->'
@@ -23,7 +20,7 @@ end='<!-- versions:end -->'
 grep -qxF "$start" "$readme" && grep -qxF "$end" "$readme" \
 	|| { echo "Error: markers ${start} / ${end} not found in ${readme}" >&2; exit 1; }
 
-matrix="$(curl -fsSL "$matrix_url")" || { echo "Error: cannot fetch ${matrix_url}" >&2; exit 1; }
+matrix="$(cat matrix.json)"
 
 table="| MediaWiki | PHP | Composer | Node.js | npm | MariaDB client | Xdebug | docker-mediawiki-tools |"$'\n'"|---|---|---|---|---|---|---|---|"
 while read -r entry; do
@@ -56,7 +53,7 @@ while read -r entry; do
 	[[ "$ref_type" == "tag" ]] || full_version+=" (pre-release)"
 
 	table+=$'\n'"| ${full_version} | ${php_full} | $(label it.gesinn.composer.version) | $(label it.gesinn.nodejs.version) | $(label it.gesinn.npm.version) | $(label it.gesinn.mariadb-client.version) | $(label it.gesinn.xdebug.version) | $(label it.gesinn.tools.version) |"
-done < <(jq -c '.[] | select(.downstream == true)' <<< "$matrix")
+done < <(jq -c '.[]' <<< "$matrix")
 
 tmp="$(mktemp)"
 awk -v start="$start" -v end="$end" -v table="$table" '
