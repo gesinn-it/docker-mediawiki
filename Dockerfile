@@ -8,7 +8,7 @@
 # MEDIAWIKI_TOOLS_VERSION: version of gesinn-it-pub/docker-mediawiki-tools
 #
 # The pinned versions are kept up to date by Renovate (see renovate.json).
-# The CI workflow reads COMPOSER_VERSION and MEDIAWIKI_TOOLS_VERSION from here for the image labels.
+# The CI workflow reads COMPOSER_VERSION, XDEBUG_VERSION and MEDIAWIKI_TOOLS_VERSION from here.
 ###################################################
 ARG MEDIAWIKI_VERSION=1.46.2
 ARG PHP_VERSION=8.4
@@ -77,7 +77,7 @@ RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
 ###################################################
 FROM mediawiki AS mediawiki-ci
 
-ARG XDEBUG_VERSION=3.3.2
+ARG XDEBUG_VERSION=3.5.3
 ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
 
 ### add build tools and patches folder
