@@ -1,0 +1,5 @@
+{
+	"PKSA-gcrk-3vtt-1r14": {
+		"reason": "MediaWiki 1.39 pins guzzlehttp/guzzle 7.4.5 (fixed in 7.15.2 and later). 1.39 has been end of life since 2025-12-31 and gets no core update; the systems are being migrated to 1.43. Will not be fixed."
+	}
+}

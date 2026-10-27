@@ -4,14 +4,22 @@
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
 # XDEBUG_VERSION: Xdebug Version
+# COMPOSER_VERSION: Composer Version
+# MEDIAWIKI_TOOLS_VERSION: version of gesinn-it-pub/docker-mediawiki-tools
+#
+# The pinned versions are kept up to date by Renovate (see renovate.json).
+# The CI workflow reads COMPOSER_VERSION and MEDIAWIKI_TOOLS_VERSION from here for the image labels.
 ###################################################
-ARG MEDIAWIKI_VERSION=1.45.1
-ARG PHP_VERSION=8.3
-ARG COMPOSER_VERSION=2.9.8
+ARG MEDIAWIKI_VERSION=1.46.2
+ARG PHP_VERSION=8.4
+ARG COMPOSER_VERSION=2.10.3
 # optional, "@sha256:...": pins the gesinn/mediawiki-base image to the digest recorded in the labels
 ARG MEDIAWIKI_BASE_DIGEST=
 
 FROM composer:${COMPOSER_VERSION} AS composer
+
+# Node.js for the CI image only, see the mediawiki-ci stage
+FROM node:24-trixie-slim AS node
 
 FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache${MEDIAWIKI_BASE_DIGEST} AS mediawiki
 
@@ -27,9 +35,6 @@ RUN apt-get update && \
     unzip \
     less \
     nano \
-    nodejs \
-    grunt \
-    npm \
     wget \
     default-mysql-client && \
     rm -rf /var/lib/apt/lists/*
@@ -52,11 +57,9 @@ RUN echo "{}" > composer.local.json && \
 #     --no-progress \
 #     --no-scripts
 
-# TEMPORARY: Composer >=2.4 blocks builds on dev-only security advisories
-# (e.g. PHPUnit) even when running with --no-dev.
-# This image intentionally excludes all dev dependencies, so disabling
-# the audit here is safe. Remove once MediaWiki updates its dev constraints.
-RUN composer config --global audit.block-insecure false && \
+# Composer does not block on security advisories: a finding in a dev dependency (which this image
+# does not install) must not stop the build. The audit gate below decides instead, see audit-gate.php.
+RUN composer config --global policy.advisories.block false && \
     composer update \
     --no-dev \
     --prefer-dist \
@@ -64,19 +67,34 @@ RUN composer config --global audit.block-insecure false && \
     --no-progress \
     --no-scripts
 
+# Fail on high/critical advisories in the installed (non-dev) packages unless accepted in audit-triage.json
+RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
+    --mount=type=bind,source=audit-triage.json,target=/tmp/audit-triage.json \
+    php /tmp/audit-gate.php /tmp/audit-triage.json strict --no-dev
+
 ###################################################
 # gesinn-it/mediawiki-ci:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache
 ###################################################
 FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.3.2
+ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
 
 ### add build tools and patches folder
-RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/5.1.0 \
+RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${MEDIAWIKI_TOOLS_VERSION} \
 	| tar xzC / --strip-components 1
 
 RUN chmod +x /build-tools/* /tools/*
 ENV PATH="/tools:/build-tools:${PATH}"
+
+# Node.js from the official image, only in the CI image (the mediawiki image has no Node.js). The Debian
+# packages are not used: they are outdated and pull in several hundred packages.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    node --version && npm --version
 
 # Install required packages
 RUN apt-get update && \
@@ -100,11 +118,12 @@ RUN docker-php-ext-install pgsql
 #     --no-interaction \
 #     --no-progress
 
-# TEMPORARY: Composer blocks dependency resolution due to dev-only
-# security advisories (e.g. PHPUnit). This does not affect runtime
-# dependencies. Remove once MediaWiki updates its dev constraints.
-RUN composer config --global audit.block-insecure false && \
-    composer update \
+# The dev tools are only used by this CI image: advisories in them are reported, but do not fail the build
+RUN composer update \
     --prefer-dist \
     --no-interaction \
     --no-progress
+
+RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
+    --mount=type=bind,source=audit-triage.json,target=/tmp/audit-triage.json \
+    php /tmp/audit-gate.php /tmp/audit-triage.json warn
