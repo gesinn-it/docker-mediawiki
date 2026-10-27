@@ -39,8 +39,15 @@ while read -r entry; do
 	fi
 
 	image="${repository}:${full_version}-php${php}"
-	annotations="$(docker buildx imagetools inspect "$image" --format '{{json .Manifest.Annotations}}')" \
-		|| { echo "Error: cannot inspect ${image}" >&2; exit 1; }
+	# an entry that has not been built yet (e.g. a new pre-release) is skipped, any other error is fatal
+	if ! annotations="$(docker buildx imagetools inspect "$image" --format '{{json .Manifest.Annotations}}' 2>&1)"; then
+		if [[ "$annotations" == *"not found"* ]]; then
+			echo "Warning: ${image} does not exist yet, skipped" >&2
+			continue
+		fi
+		echo "Error: cannot inspect ${image}: ${annotations}" >&2
+		exit 1
+	fi
 
 	# labels that an older image does not carry yet are shown as n/a
 	label() { jq -r --arg k "$1" '.[$k] // "n/a"' <<< "$annotations"; }
