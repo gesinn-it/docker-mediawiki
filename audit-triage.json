@@ -1,5 +1,8 @@
 {
 	"PKSA-gcrk-3vtt-1r14": {
 		"reason": "MediaWiki 1.39 pins guzzlehttp/guzzle 7.4.5 (fixed in 7.15.2 and later). 1.39 has been end of life since 2025-12-31 and gets no core update; the systems are being migrated to 1.43. Will not be fixed."
+	},
+	"PKSA-xz3r-9gp4-4m1z": {
+		"reason": "symfony/yaml is a direct requirement of MediaWiki core, which pins the version (5.4.x on 1.39 and 1.43, 7.4.x on 1.46); the fix (5.4.54, 6.4.45, 7.4.18) needs a MediaWiki release. In the running wiki the package parses YAML files shipped with MediaWiki and its extensions, files that an admin provides and, in Semantic MediaWiki, the content of schema pages (editable only with the schema edit right). The effect is that a single request process can crash; there is no code execution and no data leak. 1.39 is end of life and is being migrated to 1.43. Will not be fixed."
 	}
 }
