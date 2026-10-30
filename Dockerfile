@@ -4,6 +4,7 @@
 # MEDIAWIKI_VERSION: MediaWiki Version
 # PHP_VERSION: PHP Version
 # XDEBUG_VERSION: Xdebug Version
+# PCOV_VERSION: PCOV Version
 # COMPOSER_VERSION: Composer Version
 # MEDIAWIKI_TOOLS_VERSION: version of gesinn-it-pub/docker-mediawiki-tools
 #
@@ -78,6 +79,7 @@ RUN --mount=type=bind,source=audit-gate.php,target=/tmp/audit-gate.php \
 FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.5.3
+ARG PCOV_VERSION=1.0.12
 ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
 
 ### add build tools and patches folder
@@ -107,8 +109,17 @@ RUN pecl install "https://xdebug.org/files/xdebug-${XDEBUG_VERSION}.tgz" \
  && rm -rf /tmp/pear
 
 # Configure Xdebug
+# Xdebug is loaded, but switched off by default: in coverage mode it halves the speed of PHPUnit even when no
+# coverage is collected. The XDEBUG_MODE environment variable takes precedence over xdebug.mode in the ini file, so
+# a coverage run enables it with XDEBUG_MODE=coverage (or debug, develop, ...).
 RUN echo 'zend_extension=xdebug' >> /usr/local/etc/php/conf.d/99-xdebug.ini
 RUN echo 'xdebug.mode=coverage' >> /usr/local/etc/php/conf.d/99-xdebug.ini
+ENV XDEBUG_MODE=off
+
+# Install PCOV, a much faster alternative to Xdebug for code coverage. It is installed, but not enabled: enable it
+# with `docker-php-ext-enable pcov` (as root) or `php -d extension=pcov`, and set pcov.directory to the sources.
+RUN pecl install "pcov-${PCOV_VERSION}" \
+ && rm -rf /tmp/pear
 
 # Install required php extensions (required for CI)
 RUN docker-php-ext-install pgsql
