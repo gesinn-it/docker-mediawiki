@@ -27,7 +27,7 @@ jobs:
   # The combinations to build are listed in matrix.json. A manual run can be restricted to one MediaWiki and / or
   # PHP version via the workflow_dispatch inputs; the images of the base workflow trigger exactly one entry.
   plan:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       majors: ${{ steps.plan.outputs.majors }}
@@ -56,7 +56,7 @@ jobs:
   build:
     needs: plan
     name: build (${{ matrix.mediawiki_version }}, ${{ matrix.target_repository }}, ${{ matrix.php_version }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     strategy:
       fail-fast: false
@@ -264,7 +264,7 @@ jobs:
   update-readme:
     needs: [plan, build]
     if: needs.build.result == 'success' && !inputs.dry_run && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
@@ -292,7 +292,7 @@ jobs:
           git push
 
   cleanup-dev-tags:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [plan, build]
     if: needs.build.result == 'success' && !inputs.dry_run
     strategy:
