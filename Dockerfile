@@ -20,7 +20,7 @@ ARG MEDIAWIKI_BASE_DIGEST=
 FROM composer:${COMPOSER_VERSION} AS composer
 
 # Node.js for the CI image only, see the mediawiki-ci stage
-FROM node:24-trixie-slim AS node
+FROM node:26-trixie-slim AS node
 
 FROM gesinn/mediawiki-base:${MEDIAWIKI_VERSION}-php${PHP_VERSION}-apache${MEDIAWIKI_BASE_DIGEST} AS mediawiki
 
