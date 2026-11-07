@@ -10,12 +10,12 @@ INSTALLED_PACKAGES=(sudo unzip less nano wget mariadb-client libpq-dev)
 function mediawiki_ref() {
   local major_version="$1"
 
-  # Stage 1: resolve latest stable tag for the requested major version.
+  # Stage 1: resolve latest stable (non pre-release) tag for the requested major version.
   local tag
   tag=$(git ls-remote --sort=version:refname --tags https://github.com/wikimedia/mediawiki.git |
     cut -d/ -f3 |
     tr -d '^{}' |
-    grep -E "^${major_version}\." |
+    grep -E "^${major_version}\.[0-9]+$" |
     tail -1)
 
   if [[ -n "$tag" ]]; then
