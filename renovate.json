@@ -22,6 +22,18 @@
 		},
 		{
 			"customType": "regex",
+			"description": "Track the grunt-cli version pinned as GRUNT_CLI_VERSION in the Dockerfile.",
+			"managerFilePatterns": [
+				"/^Dockerfile$/"
+			],
+			"matchStrings": [
+				"ARG GRUNT_CLI_VERSION=(?<currentValue>[0-9.]+)"
+			],
+			"depNameTemplate": "grunt-cli",
+			"datasourceTemplate": "npm"
+		},
+		{
+			"customType": "regex",
 			"description": "Track the Xdebug version pinned as XDEBUG_VERSION in the Dockerfile. One version for all PHP versions: Xdebug 3.5 supports PHP 8.2 to 8.5. The upstream tags also contain old XDEBUG_x_y_z and RC tags, only stable 3.x releases are taken.",
 			"managerFilePatterns": [
 				"/^Dockerfile$/"
