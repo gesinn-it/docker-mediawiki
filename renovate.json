@@ -17,6 +17,18 @@
 		},
 		{
 			"customType": "regex",
+			"description": "Track the grunt-cli version pinned as GRUNT_CLI_VERSION in the Dockerfile.",
+			"managerFilePatterns": [
+				"/^Dockerfile$/"
+			],
+			"matchStrings": [
+				"ARG GRUNT_CLI_VERSION=(?<currentValue>[0-9.]+)"
+			],
+			"depNameTemplate": "grunt-cli",
+			"datasourceTemplate": "npm"
+		},
+		{
+			"customType": "regex",
 			"description": "Track the Xdebug versions of the PHP 8.5 and 8.4 entries in the workflow's 'Set Xdebug version' step. Each PHP version stays on its own Xdebug minor line, see the packageRules.",
 			"managerFilePatterns": ["/^\\.github/workflows/main\\.yml$/"],
 			"matchStrings": [

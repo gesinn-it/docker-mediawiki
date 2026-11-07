@@ -6,6 +6,7 @@
 # XDEBUG_VERSION: Xdebug Version
 # COMPOSER_VERSION: Composer Version
 # MEDIAWIKI_TOOLS_VERSION: version of gesinn-it-pub/docker-mediawiki-tools
+# GRUNT_CLI_VERSION: grunt-cli Version (npm, global, CI image only)
 #
 # The pinned versions are kept up to date by Renovate (see renovate.json).
 # The CI workflow reads COMPOSER_VERSION and MEDIAWIKI_TOOLS_VERSION from here for the image labels.
@@ -79,6 +80,7 @@ FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.3.2
 ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
+ARG GRUNT_CLI_VERSION=1.5.0
 
 ### add build tools and patches folder
 RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${MEDIAWIKI_TOOLS_VERSION} \
@@ -95,6 +97,11 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
     ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
     node --version && npm --version
+
+# grunt (global), as the former Debian package provided it: the grunt-cli command, which runs the grunt of the project
+RUN npm install --global "grunt-cli@${GRUNT_CLI_VERSION}" && \
+    npm cache clean --force && \
+    grunt --version
 
 # Install required packages
 RUN apt-get update && \
