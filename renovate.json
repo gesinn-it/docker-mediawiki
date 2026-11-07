@@ -4,7 +4,8 @@
 		"config:recommended"
 	],
 	"semanticCommits": "enabled",
-	"rebaseWhen": "behind-base-branch",
+	"rebaseWhen": "conflicted",
+	"prConcurrentLimit": 1,
 	"customManagers": [
 		{
 			"customType": "regex",

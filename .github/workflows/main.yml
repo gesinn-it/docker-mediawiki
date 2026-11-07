@@ -48,8 +48,9 @@ jobs:
       - name: Select the entries to build
         id: plan
         env:
-          INPUT_MEDIAWIKI_VERSION: ${{ inputs.mediawiki_version }}
-          INPUT_PHP_VERSION: ${{ inputs.php_version }}
+          # a pull request dry run builds only one combination, to keep the load on Docker Hub low
+          INPUT_MEDIAWIKI_VERSION: ${{ github.event_name == 'pull_request' && '1.46' || inputs.mediawiki_version }}
+          INPUT_PHP_VERSION: ${{ github.event_name == 'pull_request' && '8.4' || inputs.php_version }}
         run: |
           entries="$(jq -c --arg mw "$INPUT_MEDIAWIKI_VERSION" --arg php "$INPUT_PHP_VERSION" \
             '[.[] | select(($mw == "" or .mediawiki_version == $mw) and ($php == "" or .php_version == $php))]' matrix.json)"
