@@ -37,7 +37,7 @@ jobs:
   plan:
     # on pull requests only for Renovate branches (other PRs, e.g. from forks, have no access to the secrets)
     if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'renovate/')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       majors: ${{ steps.plan.outputs.majors }}
@@ -67,7 +67,7 @@ jobs:
   build:
     needs: plan
     name: build (${{ matrix.mediawiki_version }}, ${{ matrix.target_repository }}, ${{ matrix.php_version }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     strategy:
       fail-fast: false
@@ -275,7 +275,7 @@ jobs:
   update-readme:
     needs: [plan, build]
     if: needs.build.result == 'success' && !(inputs.dry_run || github.event_name == 'pull_request') && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
@@ -303,7 +303,7 @@ jobs:
           git push
 
   cleanup-dev-tags:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [plan, build]
     if: needs.build.result == 'success' && !(inputs.dry_run || github.event_name == 'pull_request')
     strategy:
