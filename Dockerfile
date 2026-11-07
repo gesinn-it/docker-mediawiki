@@ -80,7 +80,7 @@ FROM mediawiki AS mediawiki-ci
 
 ARG XDEBUG_VERSION=3.5.3
 ARG PCOV_VERSION=1.0.12
-ARG MEDIAWIKI_TOOLS_VERSION=5.3.0
+ARG MEDIAWIKI_TOOLS_VERSION=5.3.1
 
 ### add build tools and patches folder
 RUN curl -LJ https://github.com/gesinn-it-pub/docker-mediawiki-tools/tarball/${MEDIAWIKI_TOOLS_VERSION} \
