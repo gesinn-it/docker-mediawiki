@@ -48,6 +48,16 @@
 	],
 	"packageRules": [
 		{
+			"description": "Stay on the Node.js 24 LTS line; revisit before its end of life (April 2028).",
+			"matchDatasources": [
+				"docker"
+			],
+			"matchPackageNames": [
+				"node"
+			],
+			"allowedVersions": "/^24(\\.|$)/"
+		},
+		{
 			"matchDepNames": [
 				"xdebug"
 			],
