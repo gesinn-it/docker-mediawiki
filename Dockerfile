@@ -14,7 +14,7 @@
 ###################################################
 ARG MEDIAWIKI_VERSION=1.46.2
 ARG PHP_VERSION=8.4
-ARG COMPOSER_VERSION=2.11.2
+ARG COMPOSER_VERSION=2.11.3
 # optional, "@sha256:...": pins the gesinn/mediawiki-base image to the digest recorded in the labels
 ARG MEDIAWIKI_BASE_DIGEST=
 
