@@ -12,9 +12,9 @@ Dockerized MediaWiki build on top of docker-mediawiki-base images in the style o
 <!-- versions:start -->
 | MediaWiki | PHP | Composer | Node.js | npm | MariaDB client | Xdebug | docker-mediawiki-tools |
 |---|---|---|---|---|---|---|---|
-| 1.47-dev-379f4aa (pre-release) | 8.5.13 (default) | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.3.3 |
-| 1.46.3 | 8.5.13 | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.3.3 |
-| 1.46.3 | 8.4.28 (default) | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.3.3 |
+| 1.47-dev-6c8a41c (pre-release) | 8.5.13 (default) | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.4.0 |
+| 1.46.3 | 8.5.13 | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.4.0 |
+| 1.46.3 | 8.4.28 (default) | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.4.0 |
 | 1.43.12 | 8.3.37 (default) | 2.11.2 | 24.22.3 | 11.19.1 | 1:11.8.9+ds-0+deb13u1 | 3.5.3 | 5.3.3 |
 <!-- versions:end -->
 
